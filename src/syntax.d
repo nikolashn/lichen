@@ -12,19 +12,19 @@ alias Stmt = SumType!(Expr, Def);
 
 /+ Expressions +/
 
-alias Expr = SumType!(Empty, Equals, Variable);
+alias Expr = SumType!(Zero, Equals, Variable);
 
-class Empty { }
+class Zero { }
 
 class Equals {
-  immutable Expr lhs, rhs;
-  this(immutable Expr e1, immutable Expr e2) pure nothrow @safe {
+  const Expr lhs, rhs;
+  this(const Expr e1, const Expr e2) pure nothrow @safe {
     lhs = e1; rhs = e2;
   }
 }
 
 class Variable {
-  immutable string name;
+  const string name;
   this(string x) pure nothrow @safe { name = x; }
 }
 
@@ -33,9 +33,9 @@ class Variable {
 alias Def = SumType!(DefineVar);
 
 class DefineVar {
-  immutable string var;
-  immutable Expr rhs;
-  this(string x, immutable Expr e2) pure nothrow @safe {
+  const string var;
+  const Expr rhs;
+  this(string x, const Expr e2) pure nothrow @safe {
     var = x; rhs = e2;
   }
 }

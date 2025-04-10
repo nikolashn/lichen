@@ -27,6 +27,13 @@ struct Token {
     );
   }
 
+  string getIdentifier() pure nothrow @safe const {
+    return val.match!(
+      (string x) => x,
+      _ => null
+    );
+  }
+
   bool opEquals(const Token o) pure nothrow @safe const {
     return val.match!(
       (char c) => o.val.match!(
