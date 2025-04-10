@@ -24,11 +24,12 @@ Otherwise, the assertion `x /= y` holds.
 
 ### Empty set
 
-`0` is the set with no elements. It is equal to `{}`.
+`0` is the set with no elements. It is equal to `{ }`.
 
 ### Pairing
 
-If `x`, `y` are sets, then `{ x }` and `{ x, y }` are sets. For each set `x`,
+If `x`, `y` are sets, then `{ x }`, the set whose only element is `x`, and
+`{ x, y }`, whose only elements are `x` and `y`, are sets. For each set `x`,
 `{ x }` is equal to `{ x, x }`.
 
 ## Statements
