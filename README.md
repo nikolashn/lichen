@@ -1,0 +1,47 @@
+# Lichen
+
+## Sets
+
+Lichen has values called sets.
+
+### Membership
+
+Sets can have elements which are also sets. The assertion `x < y` holds if and
+only if `x` is an element of `y`.
+
+### Extensionality
+
+If every element of `x` is an element of `y`, and every element of `y` is an
+element of `x`, then `x` and `y` are equal, and the assertion `x = y` holds.
+Otherwise, the assertion `x /= y` holds.
+
+### Empty set
+
+`0` is the set with no elements. It is equal to `{}`.
+
+### Pairing
+
+If `x`, `y` are sets, then `{ x }` and `{ x, y }` are sets. For each set `x`,
+`{ x }` is equal to `{ x, x }`.
+
+## Statements
+
+Statements are either definitions, assertions or set expressions. Instances of
+these are separated sequentially by a final semicolon.
+
+### Definitions
+
+A definition binds an identifier to a value of some kind. `x := y` binds the
+identifier `x` to the set `y`. Lichen has no notion of scope for definitions.
+
+### Assertions
+
+Assertions are either true or false, and are created by combining atomic
+formulas. For sets `x`, `y`, the following are atomic formulas: `x < y`,
+`x = y`, `x /= y`.
+
+### Set expressions
+
+A set expression is just a set by itself as a statement, i.e. `x;` for any set
+`x`. Lichen prints a (not necessarily unique) representation of the set.
+
