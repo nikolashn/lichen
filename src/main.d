@@ -1,6 +1,7 @@
 import std.stdio;
 
 import lexer;
+import parser;
 
 static enum USAGE_STR =
 "Usage:
@@ -12,7 +13,7 @@ int main(string[] args) {
     return 0;
   }
 
-  tokenizeFileAt(args[1]);
+  tokenizeFileAt(args[1]).parse;
 
   return 0;
 }

@@ -10,25 +10,51 @@ import std.typecons;
 struct Token {
   enum Special {
     INVALID,
-    ASSIGN
+    DEFINE
   }
 
-  struct Identifier {
-    string name;
-    this(string s) pure nothrow @safe { name = s; }
-  }
+  alias TokenVal = SumType!(char, Special, string);
+  immutable TokenVal val;
 
-  alias TokenVal = SumType!(char, Special, Identifier);
-  TokenVal val;
-
-  this(char c) pure nothrow @safe { val = c; }
-  this(Special x) pure nothrow @safe { val = x; }
-  this(Identifier x) pure nothrow @safe { val = x; }
+  this(const char c) pure nothrow @safe { val = c; }
+  this(const Special x) pure nothrow @safe { val = x; }
+  this(const string x) pure nothrow @safe { val = x; }
 
   bool isInvalid() pure nothrow @safe const {
     return val.match!(
       (Special x) => x == Special.INVALID,
       _ => false
+    );
+  }
+
+  bool opEquals(const Token o) pure nothrow @safe const {
+    return val.match!(
+      (char c) => o.val.match!(
+        (char d) => c == d,
+        _ => false
+      ),
+      (Special x) => o.val.match!(
+        (Special y) => x == y,
+        _ => false
+      ),
+      (string x) => o.val.match!(
+        (string y) => x == y,
+        _ => false
+      )
+    );
+  }
+
+  string toString() pure nothrow @safe const {
+    return val.match!(
+      (immutable char c) => [ c ],
+      (Special x) {
+        switch (x) {
+          case Special.INVALID: return "[INVALID]";
+          case Special.DEFINE: return ":=";
+          default: assert(false);
+        }
+      },
+      (string x) => "IDENTIFIER " ~ x
     );
   }
 }
@@ -73,7 +99,7 @@ private static Token nextToken(const string buff) pure nothrow @safe {
   if (buff == ";")
     return Token(';');
   if (buff == ":=")
-    return Token(Token.Special.ASSIGN);
+    return Token(Token.Special.DEFINE);
 
   return Token(Token.Special.INVALID);
 }
@@ -106,12 +132,8 @@ private static LexerOutput tokenize(const string input) pure nothrow @safe {
     if (buff.length > 0) {
       auto token = nextToken(buff);
 
-      debug {
-        if (!token.isInvalid || breakIdentifier) writeln(buff);
-      }
-
       if (token.isInvalid && breakIdentifier)
-        output.tokens ~= Token(Token.Identifier(buff));
+        output.tokens ~= Token(buff);
       else if (!token.isInvalid)
         output.tokens ~= token;
 
