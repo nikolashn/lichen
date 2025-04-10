@@ -13,7 +13,7 @@ import syntax;
 
    program -> { expr ";" | def }
    def -> identifier ":=" expr
-   expr -> term (= expr)?
+   expr -> term ("=" expr)?
    term -> "0" | identifier
  +/
 
