@@ -12,7 +12,7 @@ import syntax;
 
    program -> { expr ";" | def }
    def -> identifier ":=" expr ";"
-   expr -> term ("=" expr)?
+   expr -> term ("=" expr | "<" expr)?
    term -> "0" | identifier
  +/
 
@@ -149,7 +149,14 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
 
       if (expr !is null) {
-        return new Expr(Equals(term, expr));
+        return new Expr(BinOp(BinOp.Type.EQUALS, term, expr));
+      }
+    }
+    else if (p.consume(Token('<'))) {
+      auto expr = pExpr(p);
+
+      if (expr !is null) {
+        return new Expr(BinOp(BinOp.Type.MEMBER, term, expr));
       }
     }
     else {

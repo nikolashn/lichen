@@ -19,6 +19,13 @@ class Set {
   bool equals(const Set o) pure nothrow @safe const {
     return isZero && o.isZero;
   }
+
+  bool member(const Set o) pure nothrow @safe const {
+    if (isZero)
+      return false;
+
+    return false;
+  }
 }
 
 alias Value = SumType!(Set, bool);
@@ -70,20 +77,42 @@ static const(Value)* eval(const Expr* e, const Env env) pure @safe
 {
   return (*e).match!(
     (Zero _) => new Value(new Set),
-    (Equals e1) {
+    (BinOp e1) {
       auto v1 = eval(e1.lhs, env);
       auto v2 = eval(e1.rhs, env);
+      auto op = e1.type;
 
-      if (!v1.isSet || !v2.isSet) 
-        throw new SemanticException("Both sides of an equality must be sets");
+      switch (op) {
+        case BinOp.Type.EQUALS:
+          if (!v1.isSet || !v2.isSet) {
+            throw new SemanticException(
+              "Both sides of an equality must be sets");
+          }
 
-      return (*v1).match!(
-        (const Set s1) => (*v2).match!(
-          (const Set s2) => new Value(s1.equals(s2)),
-          _ => assert(0)
-        ),
-        _ => assert(0)
-      );
+          return (*v1).match!(
+            (const Set s1) => (*v2).match!(
+              (const Set s2) => new Value(s1.equals(s2)),
+              _ => assert(0)
+            ),
+            _ => assert(0)
+          );
+
+        case BinOp.Type.MEMBER:
+          if (!v1.isSet || !v2.isSet) {
+            throw new SemanticException(
+              "Both sides of a membership test must be sets");
+          }
+
+          return (*v1).match!(
+            (const Set s1) => (*v2).match!(
+              (const Set s2) => new Value(s1.member(s2)),
+              _ => assert(0)
+            ),
+            _ => assert(0)
+          );
+
+        default: assert(0);
+      }
     },
     (Variable v) => env.find(v.name)
   );

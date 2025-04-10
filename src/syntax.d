@@ -11,15 +11,26 @@ alias Stmt = SumType!(Expr*, Def*);
 
 alias Expr = SumType!(
   Zero,
-  Equals,
+  BinOp,
   Variable
 );
 
 struct Zero { }
-struct Equals {
+
+struct BinOp {
+  enum Type {
+    EQUALS,
+    MEMBER
+  }
+
+  const Type type;
   const Expr* lhs, rhs;
-  this(Expr* e1, Expr* e2) pure nothrow @safe { lhs = e1; rhs = e2; }
+
+  this(Type t, Expr* e1, Expr* e2) pure nothrow @safe {
+    type = t; lhs = e1; rhs = e2;
+  }
 }
+
 struct Variable {
   const string name;
   this(string x) pure nothrow @safe { name = x; }

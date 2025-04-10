@@ -101,6 +101,8 @@ static immutable(Token)[] tokenizeFileAt(const string path) {
 private static Token nextToken(const string buff) pure nothrow @safe {
   if (buff == "=")
     return Token('=');
+  if (buff == "<")
+    return Token('<');
   if (buff == "0")
     return Token('0');
   if (buff == ";")
