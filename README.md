@@ -1,5 +1,12 @@
 # Lichen
 
+An interpreter for Lichen, a newly made programming language for exploring
+axiomatic set theory.
+
+## Building
+
+`make`.
+
 ## Sets
 
 Lichen has values called sets.
@@ -26,7 +33,7 @@ If `x`, `y` are sets, then `{ x }` and `{ x, y }` are sets. For each set `x`,
 
 ## Statements
 
-Statements are either definitions, assertions or set expressions. Instances of
+Statements are either definitions, assertions or value statements. Instances of
 these are separated sequentially by a final semicolon.
 
 ### Definitions
@@ -37,11 +44,12 @@ identifier `x` to the set `y`. Lichen has no notion of scope for definitions.
 ### Assertions
 
 Assertions are either true or false, and are created by combining atomic
-formulas. For sets `x`, `y`, the following are atomic formulas: `x < y`,
+formulas. Assertions that succeed continue, and assertions that fail give an
+error message. For sets `x`, `y`, the following are atomic formulas: `x < y`,
 `x = y`, `x /= y`.
 
-### Set expressions
+### Value statements
 
-A set expression is just a set by itself as a statement, i.e. `x;` for any set
+A value statement is just a set by itself as a statement, i.e. `x;` for any set
 `x`. Lichen prints a (not necessarily unique) representation of the set.
 
