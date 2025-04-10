@@ -10,7 +10,8 @@ import std.typecons;
 struct Token {
   enum Special {
     INVALID,
-    DEFINE
+    DEFINE,
+    NEQUAL
   }
 
   alias TokenVal = SumType!(char, Special, string);
@@ -58,6 +59,7 @@ struct Token {
         switch (x) {
           case Special.INVALID: return "[INVALID]";
           case Special.DEFINE: return ":=";
+          case Special.NEQUAL: return "/=";
           default: assert(false);
         }
       },
@@ -95,22 +97,30 @@ static immutable(Token)[] tokenizeFileAt(const string path) {
       "' on line " ~ to!string(output.lines) ~ ":" ~ to!string(output.rows));
   }
   
+  debug output.tokens.writeln;
   return output.tokens;
 }
 
 private static Token nextToken(const string buff) pure nothrow @safe {
-  if (buff == "=")
-    return Token('=');
-  if (buff == "<")
-    return Token('<');
-  if (buff == "0")
-    return Token('0');
-  if (buff == ";")
-    return Token(';');
-  if (buff == ":=")
-    return Token(Token.Special.DEFINE);
-
+  if (buff == "=")  return Token('=');
+  if (buff == "<")  return Token('<');
+  if (buff == "0")  return Token('0');
+  if (buff == ";")  return Token(';');
+  if (buff == ",")  return Token(',');
+  if (buff == "{")  return Token('{');
+  if (buff == "}")  return Token('}');
+  if (buff == ":=") return Token(Token.Special.DEFINE);
+  if (buff == "/=") return Token(Token.Special.NEQUAL);
   return Token(Token.Special.INVALID);
+}
+
+private static bool isPunctuation(const char c) pure nothrow @safe {
+  switch (c) {
+    case '=', '<', '0', ';', ':', ',', '{', '}', '/':
+      return true;
+    default:
+      return false;
+  }
 }
 
 private static LexerOutput tokenize(const string input) pure nothrow @safe {
@@ -119,48 +129,43 @@ private static LexerOutput tokenize(const string input) pure nothrow @safe {
   string buff;
 
   foreach (i, c; input) {
+    bool whitespace;
+
+    if (c == ' ' || c == '\t') {
+      whitespace = true;
+    }
+    else if (c == '\n') {
+      output.lines += 1;
+      output.rows = 0;
+      whitespace = true;
+    }
+    else {
+      buff ~= c;
+    }
+
+    output.rows += 1;
+
     bool repeat;
     do {
       repeat = false;
 
-      auto lines = output.lines;
-      auto rows = output.rows;
-
-      bool breakIdentifier;
-
-      if (c == ' ' || c == '\t') {
-        breakIdentifier = true;
-      }
-      else if (c == '\n') {
-        output.lines += 1;
-        output.rows = 0;
-        breakIdentifier = true;
-      }
-      else {
-        buff ~= c;
-      }
-
-      output.rows += 1;
-
       if (buff.length > 0) {
         auto token = nextToken(buff);
 
-        if (token.isInvalid && breakIdentifier) {
+        if (token.isInvalid) {
           size_t j;
           for (j = 0; j < buff.length; ++j) {
-            if (buff[j] == ';' || buff[j] == ':' || buff[j] == '=') {
-              break;
-            }
+            if (buff[j].isPunctuation) break;
           }
-          output.tokens ~= Token(buff[0..j]);
-          buff = buff[j..$];
+          if (whitespace || (0 < j && j < buff.length)) {
+            output.tokens ~= Token(buff[0..j]);
+            buff = buff[j..$];
+            unreadIndex = i - buff.length + 1;
+          }
         }
-        else if (!token.isInvalid) {
+        else {
           output.tokens ~= token;
           buff = "";
-        }
-
-        if (!token.isInvalid || breakIdentifier) {
           unreadIndex = i + 1;
         }
       }

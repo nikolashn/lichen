@@ -5,41 +5,20 @@ import std.sumtype;
 
 import syntax;
 import parser;
+import set;
 
-class Set {
-  private immutable bool isZero;
-
-  this() pure nothrow @safe const { isZero = true; }
-
-  override string toString() pure nothrow @safe const {
-    if (isZero) return "0";
-    return "[set]";
-  }
-
-  bool equals(const Set o) pure nothrow @safe const {
-    return isZero && o.isZero;
-  }
-
-  bool member(const Set o) pure nothrow @safe const {
-    if (isZero)
-      return false;
-
-    return false;
-  }
-}
-
-alias Value = SumType!(Set, bool);
+alias Value = const SumType!(Set, bool);
 
 struct Env {
-  private const(Value)*[string] entries;
+  private Value*[string] entries;
 
-  const(Value*) find(const string x) pure @safe const {
+  Value* find(const string x) pure @safe const {
     if (x !in entries)
       throw new SemanticException("Used undefined identifier '" ~ x ~ "'");
     return entries[x];
   }
 
-  void update(const string x, const Value* v) pure nothrow @safe {
+  void update(const string x, Value* v) pure nothrow @safe {
     entries[x] = v;
   }
 }
@@ -54,10 +33,10 @@ static void interpret(Stmt[] program) @safe {
   foreach (stmt; program) {
     stmt.match!(
       (Expr* e) {
-        const Value v = *eval(e, env);
+        auto v = *eval(e, env);
         v.match!(
-          (const Set s) => s.writeln,
-          (const bool b) {
+          (Set s) => s.writeln,
+          (bool b) {
             if (!b) "Assertion failed".writeln;
           }
         );
@@ -71,7 +50,7 @@ static void interpret(Stmt[] program) @safe {
   }
 }
 
-static const(Value)* eval(const Expr* e, const Env env) pure @safe
+static Value* eval(const Expr* e, const Env env) pure @safe
   in (e !is null)
   out (v; v !is null)
 {
@@ -89,13 +68,9 @@ static const(Value)* eval(const Expr* e, const Env env) pure @safe
               "Both sides of an equality must be sets");
           }
 
-          return (*v1).match!(
-            (const Set s1) => (*v2).match!(
-              (const Set s2) => new Value(s1.equals(s2)),
-              _ => assert(0)
-            ),
-            _ => assert(0)
-          );
+          auto set1 = (*v1).get!Set;
+          auto set2 = (*v2).get!Set;
+          return new Value(set1.equals(set2));
 
         case BinOp.Type.MEMBER:
           if (!v1.isSet || !v2.isSet) {
@@ -103,25 +78,48 @@ static const(Value)* eval(const Expr* e, const Env env) pure @safe
               "Both sides of a membership test must be sets");
           }
 
-          return (*v1).match!(
-            (const Set s1) => (*v2).match!(
-              (const Set s2) => new Value(s1.member(s2)),
-              _ => assert(0)
-            ),
-            _ => assert(0)
-          );
+          auto set1 = (*v1).get!Set;
+          auto set2 = (*v2).get!Set;
+          return new Value(set1.member(set2));
+
+        case BinOp.Type.NEQUAL:
+          if (!v1.isSet || !v2.isSet) {
+            throw new SemanticException(
+              "Both sides of an inequality must be sets");
+          }
+
+          auto set1 = (*v1).get!Set;
+          auto set2 = (*v2).get!Set;
+          return new Value(!set1.equals(set2));
 
         default: assert(0);
       }
     },
-    (Variable v) => env.find(v.name)
+    (Variable var) => env.find(var.name),
+    (Single s) {
+      auto v = eval(s.member, env);
+
+      if (!v.isSet)
+        throw new SemanticException("Sets may only contain other sets");
+
+      auto set = (*v).get!Set;
+      return new Value(new Set(set));
+    },
+    (Pair s) {
+      auto v1 = eval(s.member1, env);
+      auto v2 = eval(s.member2, env);
+
+      if (!v1.isSet || !v2.isSet)
+        throw new SemanticException("Sets may only contain other sets");
+
+      auto set1 = (*v1).get!Set;
+      auto set2 = (*v2).get!Set;
+      return new Value(new Set(set1, set2));
+    }
   );
 }
 
-static bool isSet(const Value* v) pure nothrow @safe {
-  return (*v).match!(
-    (const Set s) => true,
-    _ => false
-  );
+static bool isSet(Value* v) pure nothrow @safe {
+  return (*v).has!(const Set);
 }
 

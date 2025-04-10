@@ -12,8 +12,8 @@ import syntax;
 
    program -> { expr ";" | def }
    def -> identifier ":=" expr ";"
-   expr -> term ("=" expr | "<" expr)?
-   term -> "0" | identifier
+   expr -> term ("=" expr | "<" expr | "/=" expr)?
+   term -> "0" | identifier | "{" (expr ("," expr)?)? "}"
  +/
 
 class SyntaxException : Exception { this() pure nothrow @safe { super(""); } }
@@ -109,6 +109,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
     }
 
     p.backtrack;
+
     throw new SyntaxException;
   }
 
@@ -137,6 +138,7 @@ private static Def* pDef(Parser p) pure @safe {
   }
 
   p.backtrack;
+
   return null;
 }
 
@@ -149,6 +151,7 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
 
       if (expr !is null) {
+        p.untrack;
         return new Expr(BinOp(BinOp.Type.EQUALS, term, expr));
       }
     }
@@ -156,7 +159,16 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
 
       if (expr !is null) {
+        p.untrack;
         return new Expr(BinOp(BinOp.Type.MEMBER, term, expr));
+      }
+    }
+    else if (p.consume(Token(Token.Special.NEQUAL))) {
+      auto expr = pExpr(p);
+
+      if (expr !is null) {
+        p.untrack;
+        return new Expr(BinOp(BinOp.Type.NEQUAL, term, expr));
       }
     }
     else {
@@ -166,6 +178,7 @@ private static Expr* pExpr(Parser p) pure @safe {
   }
 
   p.backtrack;
+
   return null;
 }
 
@@ -178,6 +191,31 @@ private static Expr* pTerm(Parser p) pure @safe {
   if (x !is null) {
     return new Expr(Variable(x));
   }
+
+  p.track;
+
+  if (p.consume(Token('{'))) {
+    auto expr = pExpr(p);
+    if (expr !is null) {
+      if (p.consume(Token(','))) {
+        auto expr1 = pExpr(p);
+        if (expr !is null && p.consume(Token('}'))) {
+          p.untrack;
+          return new Expr(Pair(expr, expr1));
+        }
+      }
+      else if (p.consume(Token('}'))) {
+        p.untrack;
+        return new Expr(Single(expr));
+      }
+    }
+    else if (p.consume(Token('}'))) {
+      p.untrack;
+      return new Expr(Zero());
+    }
+  }
+
+  p.backtrack;
 
   return null;
 }
