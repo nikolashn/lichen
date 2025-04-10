@@ -12,7 +12,7 @@ import syntax;
 /+ Syntax:
 
    program -> { expr ";" | def }
-   def -> identifier ":=" expr
+   def -> identifier ":=" expr ";"
    expr -> term ("=" expr)?
    term -> "0" | identifier
  +/
