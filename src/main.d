@@ -2,6 +2,7 @@ import std.stdio;
 
 import lexer;
 import parser;
+import interpreter;
 
 static enum USAGE_STR =
 "Usage:
@@ -13,15 +14,17 @@ int main(string[] args) {
     return 0;
   }
 
-  auto tokens = tokenizeFileAt(args[1]);
   try {
-    auto tree = tokens.parse;
+    tokenizeFileAt(args[1]).parse.interpret;
   }
   catch (SyntaxException e) {
     stderr.writeln("Error: Syntax error");
   }
   catch (EOFException e) {
     stderr.writeln("Error: Unexpected end of file");
+  }
+  catch (SemanticException e) {
+    stderr.writeln("Error: ", e.msg);
   }
 
   return 0;

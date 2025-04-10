@@ -80,7 +80,7 @@ class LexerOutput {
   }
 }
 
-immutable(Token)[] tokenizeFileAt(const string path) {
+static immutable(Token)[] tokenizeFileAt(const string path) {
   LexerOutput output;
 
   try {
@@ -117,41 +117,56 @@ private static LexerOutput tokenize(const string input) pure nothrow @safe {
   string buff;
 
   foreach (i, c; input) {
-    auto lines = output.lines;
-    auto rows = output.rows;
+    bool repeat;
+    do {
+      repeat = false;
 
-    bool breakIdentifier;
+      auto lines = output.lines;
+      auto rows = output.rows;
 
-    if (c == ' ' || c == '\t') {
-      breakIdentifier = true;
-    }
-    else if (c == '\n') {
-      output.lines += 1;
-      output.rows = 0;
-      breakIdentifier = true;
-    }
-    else {
-      buff ~= c;
-    }
+      bool breakIdentifier;
 
-    output.rows += 1;
+      if (c == ' ' || c == '\t') {
+        breakIdentifier = true;
+      }
+      else if (c == '\n') {
+        output.lines += 1;
+        output.rows = 0;
+        breakIdentifier = true;
+      }
+      else {
+        buff ~= c;
+      }
 
-    if (buff.length > 0) {
-      auto token = nextToken(buff);
+      output.rows += 1;
 
-      if (token.isInvalid && breakIdentifier)
-        output.tokens ~= Token(buff);
-      else if (!token.isInvalid)
-        output.tokens ~= token;
+      if (buff.length > 0) {
+        auto token = nextToken(buff);
 
-      if (!token.isInvalid || breakIdentifier) {
-        buff = "";
+        if (token.isInvalid && breakIdentifier) {
+          size_t j;
+          for (j = 0; j < buff.length; ++j) {
+            if (buff[j] == ';' || buff[j] == ':' || buff[j] == '=') {
+              break;
+            }
+          }
+          output.tokens ~= Token(buff[0..j]);
+          buff = buff[j..$];
+        }
+        else if (!token.isInvalid) {
+          output.tokens ~= token;
+          buff = "";
+        }
+
+        if (!token.isInvalid || breakIdentifier) {
+          unreadIndex = i + 1;
+        }
+      }
+      else {
         unreadIndex = i + 1;
       }
     }
-    else {
-      unreadIndex = i + 1;
-    }
+    while (repeat);
   }
 
   output.unread = input[unreadIndex..$];

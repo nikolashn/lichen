@@ -2,7 +2,6 @@ module parser;
 
 import std.array;
 import std.sumtype;
-import std.typecons;
 
 import std.stdio; /+ For debugging +/
 
@@ -83,17 +82,17 @@ private class Parser {
   }
 }
 
-Program parse(immutable(Token)[] tokens) pure @safe {
+static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
   auto p = new Parser(tokens);
 
-  Program program;
+  Stmt[] program;
 
   while (!p.done) {
     p.track;
     auto expr = pExpr(p);
 
-    if (!expr.isNull && p.consume(Token(';'))) {
-      program ~= Stmt(expr.get);
+    if (expr !is null && p.consume(Token(';'))) {
+      program ~= Stmt(expr);
       p.untrack;
       continue;
     }
@@ -103,8 +102,8 @@ Program parse(immutable(Token)[] tokens) pure @safe {
     p.track;
     auto def = pDef(p);
 
-    if (!def.isNull) {
-      program ~= Stmt(def.get);
+    if (def !is null) {
+      program ~= Stmt(def);
       p.untrack;
       continue;
     }
@@ -113,65 +112,66 @@ Program parse(immutable(Token)[] tokens) pure @safe {
     throw new SyntaxException;
   }
 
+  debug writeln("Finished parsing");
   return program;
 }
 
-Nullable!Def pDef(Parser p) pure @safe {
+private static Def* pDef(Parser p) pure @safe {
   p.track;
   auto expr = pExpr(p);
 
-  if (!expr.isNull) {
-    auto x = expr.get.match!(
-      (Variable v) => v.name,
+  if (expr !is null) {
+    string x = (*expr).match!(
+      (Variable var) => var.name,
       _ => null
     );
 
     if (x !is null && p.consume(Token(Token.Special.DEFINE))) {
       auto expr1 = pExpr(p);
 
-      if (!expr1.isNull && p.consume(Token(';'))) {
+      if (expr1 !is null && p.consume(Token(';'))) {
         p.untrack;
-        return Def(new DefineVar(x, expr1.get)).nullable;
+        return new Def(DefineVar(x, expr1));
       }
     }
   }
 
   p.backtrack;
-  return Nullable!Def.init;
+  return null;
 }
 
-Nullable!Expr pExpr(Parser p) pure @safe {
+private static Expr* pExpr(Parser p) pure @safe {
   p.track;
   auto term = pTerm(p);
 
-  if (!term.isNull) {
+  if (term !is null) {
     if (p.consume(Token('='))) {
       auto expr = pExpr(p);
 
-      if (!expr.isNull) {
-        return Expr(new Equals(term.get, expr.get)).nullable;
+      if (expr !is null) {
+        return new Expr(Equals(term, expr));
       }
     }
     else {
       p.untrack;
-      return term.get.nullable;
+      return term;
     }
   }
 
   p.backtrack;
-  return Nullable!Expr.init;
+  return null;
 }
 
-Nullable!Expr pTerm(Parser p) pure @safe {
+private static Expr* pTerm(Parser p) pure @safe {
   if (p.consume(Token('0'))) {
-    return Expr(new Zero).nullable;
+    return new Expr(Zero());
   }
   
   auto x = p.consumeIdentifier;
   if (x !is null) {
-    return Expr(new Variable(x)).nullable;
+    return new Expr(Variable(x));
   }
 
-  return Nullable!Expr.init;
+  return null;
 }
 
