@@ -100,10 +100,11 @@ static immutable(Token)[] tokenizeFileAt(const string path) {
     output = tokenize(readText(path), path);
   }
   catch (Exception e) {
-    throw new Exception("Error reading file at path '" ~ path ~ "'");
+    throw new Exception("Could not read file at path '" ~ path ~ "'");
   }
 
   if (output.unread.length > 0) {
+    debug output.tokens.writeln;
     throw new Exception("Invalid token in file at path '" ~ path ~ 
       "' on line " ~ to!string(output.lines) ~ ":" ~ to!string(output.rows));
   }
@@ -120,6 +121,11 @@ private static Token nextToken(const string buff) pure nothrow @safe {
   if (buff == ",")  return Token(',');
   if (buff == "{")  return Token('{');
   if (buff == "}")  return Token('}');
+  if (buff == "~")  return Token('~');
+  if (buff == "|")  return Token('|');
+  if (buff == "&")  return Token('&');
+  if (buff == "(")  return Token('(');
+  if (buff == ")")  return Token(')');
   if (buff == ":=") return Token(Token.Special.DEFINE);
   if (buff == "/=") return Token(Token.Special.NEQUAL);
   return Token(Token.Special.INVALID);
@@ -127,7 +133,7 @@ private static Token nextToken(const string buff) pure nothrow @safe {
 
 private static bool isPunctuation(const char c) pure nothrow @safe {
   switch (c) {
-    case '=', '<', '0', ';', ':', ',', '{', '}', '/':
+    case '=', '<', '0', ';', ':', ',', '{', '}', '/', '~', '|', '&', '(', ')':
       return true;
     default:
       return false;
@@ -169,23 +175,25 @@ private static LexerOutput tokenize(
 
       if (buff.length > 0) {
         auto token = nextToken(buff);
-        token.line = line; token.row = row; token.path = path;
 
         if (token.isInvalid) {
           size_t j;
-          for (j = 0; j < buff.length; ++j) {
+          for (j = 1; j < buff.length; ++j) {
             if (buff[j].isPunctuation) break;
           }
-          if (whitespace || (0 < j && j < buff.length)) {
+          if (j < buff.length || whitespace) {
             auto token1 = Token(buff[0..j]);
             token1.line = line; token1.row = row; token1.path = path;
 
             output.tokens ~= token1;
             buff = buff[j..$];
             unreadIndex = i - buff.length + 1;
+
+            repeat = true;
           }
         }
         else {
+          token.line = line; token.row = row; token.path = path;
           output.tokens ~= token;
           buff = "";
           unreadIndex = i + 1;

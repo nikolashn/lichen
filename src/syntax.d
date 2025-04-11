@@ -20,6 +20,7 @@ struct Stmt {
 struct Expr {
   alias Type = SumType!(
     Zero,
+    UnOp,
     BinOp,
     Variable,
     Single,
@@ -30,6 +31,7 @@ struct Expr {
   string path;
 
   this(Zero x) pure nothrow @safe { val = x; }
+  this(UnOp x) pure nothrow @safe { val = x; }
   this(BinOp x) pure nothrow @safe { val = x; }
   this(Variable x) pure nothrow @safe { val = x; }
   this(Single x) pure nothrow @safe { val = x; }
@@ -38,11 +40,26 @@ struct Expr {
 
 struct Zero { }
 
+struct UnOp {
+  enum Type {
+    LNOT
+  }
+
+  const Type type;
+  const Expr* post;
+
+  this(Type t, Expr* e1) pure nothrow @safe {
+    type = t; post = e1;
+  }
+}
+
 struct BinOp {
   enum Type {
     EQUALS,
     MEMBER,
-    NEQUAL
+    NEQUAL,
+    LAND,
+    LOR
   }
 
   const Type type;

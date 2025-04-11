@@ -66,6 +66,23 @@ static Value* eval(const Expr* e, const Env env) pure @safe
 {
   return e.val.match!(
     (Zero _) => new Value(new Set),
+    (UnOp e1) {
+      auto v1 = eval(e1.post, env);
+      auto op = e1.type;
+
+      switch (op) {
+        case UnOp.Type.LNOT:
+          if (!v1.isBool) {
+            throw new TokenException("The operand of a logical NOT " ~
+              "expression must be a logical expression", e.line, e.row, e.path);
+          }
+
+          auto b1 = (*v1).get!(const bool);
+          return new Value(!b1);
+          
+        default: assert(false);
+      }
+    },
     (BinOp e1) {
       auto v1 = eval(e1.lhs, env);
       auto v2 = eval(e1.rhs, env);
@@ -103,7 +120,29 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           auto set2 = (*v2).get!Set;
           return new Value(!set1.equals(set2));
 
-        default: assert(0);
+        case BinOp.Type.LAND:
+          if (!v1.isBool || !v2.isBool) {
+            throw new TokenException(
+              "Both sides of a logical AND expression and must be " ~ 
+              "logical expressions", e.line, e.row, e.path);
+          }
+
+          auto b1 = (*v1).get!(const bool);
+          auto b2 = (*v2).get!(const bool);
+          return new Value(b1 && b2);
+
+        case BinOp.Type.LOR:
+          if (!v1.isBool || !v2.isBool) {
+            throw new TokenException(
+              "Both sides of a logical OR expression and must be " ~ 
+              "logical expressions", e.line, e.row, e.path);
+          }
+
+          auto b1 = (*v1).get!(const bool);
+          auto b2 = (*v2).get!(const bool);
+          return new Value(b1 || b2);
+
+        default: assert(false);
       }
     },
     (Variable var) => env.find(var.name, e.line, e.row, e.path),
@@ -134,5 +173,9 @@ static Value* eval(const Expr* e, const Env env) pure @safe
 
 static bool isSet(Value* v) pure nothrow @safe {
   return (*v).has!(const Set);
+}
+
+static bool isBool(Value* v) pure nothrow @safe {
+  return (*v).has!(const bool);
 }
 

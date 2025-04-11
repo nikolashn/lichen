@@ -12,7 +12,9 @@ import syntax;
 
    program -> { expr ";" | def }
    def -> identifier ":=" expr ";"
-   expr -> term ("=" expr | "<" expr | "/=" expr)?
+   expr -> pseudatom ("&" expr | "|" expr)?
+   pseudatom -> "~" pseudatom | "(" expr ")" | atom
+   atom -> term ("=" term | "<" term | "/=" term)?
    term -> "0" | identifier | "{" (expr ("," expr)?)? "}"
  +/
 
@@ -175,22 +177,102 @@ private static Expr* pExpr(Parser p) pure @safe {
   immutable string path = p.top.path;
 
   p.track;
+  auto pseudatom = pPseudatom(p);
+  if (pseudatom !is null) {
+    if (p.consume(Token('&'))) {
+      auto expr = pExpr(p);
+      if (expr !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.LAND, pseudatom, expr));
+        result.line = line; result.row = row; result.path = path;
+
+        p.untrack;
+        return result;
+      }
+    }
+    else if (p.consume(Token('|'))) {
+      auto expr = pExpr(p);
+      if (expr !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.LOR, pseudatom, expr));
+        result.line = line; result.row = row; result.path = path;
+
+        p.untrack;
+        return result;
+      }
+    }
+    else {
+      p.untrack;
+      return pseudatom;
+    }
+  }
+
+  p.backtrack;
+
+  return null;
+}
+
+private static Expr* pPseudatom(Parser p) pure @safe {
+  immutable line = p.top.line, row = p.top.row;
+  immutable string path = p.top.path;
+
+  p.track;
+  if (p.consume(Token('~'))) {
+    auto pseudatom = pPseudatom(p);
+    if (pseudatom !is null) {
+      auto result = new Expr(UnOp(UnOp.Type.LNOT, pseudatom));
+      result.line = line; result.row = row; result.path = path;
+
+      p.untrack;
+      return result;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  if (p.consume(Token('('))) {
+    auto expr = pExpr(p);
+    if (expr !is null && p.consume(Token(')'))) {
+      p.untrack;
+      return expr;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  auto atom = pAtom(p);
+
+  if (atom !is null) {
+    p.untrack;
+    return atom;
+  }
+
+  p.backtrack;
+
+  return null;
+}
+
+private static Expr* pAtom(Parser p) pure @safe {
+  immutable line = p.top.line, row = p.top.row;
+  immutable string path = p.top.path;
+
+  p.track;
   auto term = pTerm(p);
 
   if (term !is null) {
     if (p.consume(Token('='))) {
-      auto expr = pExpr(p);
+      auto term1 = pTerm(p);
 
-      if (expr !is null) {
+      if (term1 !is null) {
         p.untrack;
-        return new Expr(BinOp(BinOp.Type.EQUALS, term, expr));
+        return new Expr(BinOp(BinOp.Type.EQUALS, term, term1));
       }
     }
     else if (p.consume(Token('<'))) {
-      auto expr = pExpr(p);
+      auto term1 = pTerm(p);
 
-      if (expr !is null) {
-        auto result = new Expr(BinOp(BinOp.Type.MEMBER, term, expr));
+      if (term1 !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.MEMBER, term, term1));
         result.line = line; result.row = row; result.path = path;
 
         p.untrack;
@@ -198,10 +280,10 @@ private static Expr* pExpr(Parser p) pure @safe {
       }
     }
     else if (p.consume(Token(Token.Special.NEQUAL))) {
-      auto expr = pExpr(p);
+      auto term1 = pTerm(p);
 
-      if (expr !is null) {
-        auto result = new Expr(BinOp(BinOp.Type.NEQUAL, term, expr));
+      if (term1 !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.NEQUAL, term, term1));
         result.line = line; result.row = row; result.path = path;
 
         p.untrack;

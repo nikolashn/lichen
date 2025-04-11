@@ -29,6 +29,9 @@ int main(string[] args) {
       ? stderr.writeln(e.msg)
       : stderr.writeln("Error at path '", e.path, "': ", e.msg);
   }
+  catch (Exception e) {
+    stderr.writeln("Error: ", e.msg);
+  }
 
   return 0;
 }
