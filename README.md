@@ -49,7 +49,8 @@ succeed continue, and assertions that fail give an error message. For sets `x`,
 `y`, the following are atomic formulas: `x < y`, `x = y`, `x /= y`. If `φ`, `ψ`
 are formulas, then `~φ` (true if and only if `φ` is false), `φ & ψ` (true if and
 only if both `φ` and `ψ` are true) and `φ | ψ` (true if and only if at least one
-of `φ` and `ψ` is true).
+of `φ` and `ψ` is true). Precedence can be ensured by using enclosing
+parentheses `(φ)`.
 
 ### Value statements
 
