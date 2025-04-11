@@ -44,10 +44,12 @@ identifier `x` to the set `y`. Lichen has no notion of scope for definitions.
 
 ### Assertions
 
-Assertions are either true or false, and are created by combining atomic
-formulas. Assertions that succeed continue, and assertions that fail give an
-error message. For sets `x`, `y`, the following are atomic formulas: `x < y`,
-`x = y`, `x /= y`.
+Assertions are formulas, which may be either true or false. Assertions that
+succeed continue, and assertions that fail give an error message. For sets `x`,
+`y`, the following are atomic formulas: `x < y`, `x = y`, `x /= y`. If `φ`, `ψ`
+are formulas, then `~φ` (true if and only if `φ` is false), `φ & ψ` (true if and
+only if both `φ` and `ψ` are true) and `φ | ψ` (true if and only if at least one
+of `φ` and `ψ` is true).
 
 ### Value statements
 
