@@ -17,11 +17,17 @@ int main(string[] args) {
   try {
     tokenizeFileAt(args[1]).parse.interpret;
   }
-  catch (SyntaxException e) {
-    stderr.writeln("Error: Syntax error");
+  catch (TokenException e) {
+    e.path is null
+      ? stderr.writeln("Error on line ", e.line, ":", e.row, " :-- ", e.msg)
+      : stderr.writeln(
+          "Error at path '", e.path, "' on line ", e.line, ":", e.row,
+          " :-- ", e.msg);
   }
   catch (EOFException e) {
-    stderr.writeln("Error: Unexpected end of file");
+    e.path is null
+      ? stderr.writeln(e.msg)
+      : stderr.writeln("Error at path '", e.path, "' :-- ", e.msg);
   }
   catch (SemanticException e) {
     stderr.writeln("Error: ", e.msg);

@@ -7,6 +7,10 @@ import syntax;
 import parser;
 import set;
 
+class SemanticException : Exception {
+  this(string s) pure nothrow @safe { super(s); }
+}
+
 alias Value = const SumType!(Set, bool);
 
 struct Env {
@@ -21,10 +25,6 @@ struct Env {
   void update(const string x, Value* v) pure nothrow @safe {
     entries[x] = v;
   }
-}
-
-class SemanticException : Exception {
-  this(string s) pure nothrow @safe { super(s); }
 }
 
 static void interpret(Stmt[] program) @safe {

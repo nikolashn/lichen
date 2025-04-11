@@ -16,6 +16,8 @@ struct Token {
 
   alias TokenVal = SumType!(char, Special, string);
   immutable TokenVal val;
+  size_t line, row;
+  string path;
 
   this(const char c) pure nothrow @safe { val = c; }
   this(const Special x) pure nothrow @safe { val = x; }
@@ -68,10 +70,20 @@ struct Token {
   }
 }
 
+class TokenException : Exception {
+  size_t line, row;
+  string path;
+  this(string s, size_t line, size_t row, string path = null)
+    pure nothrow @safe
+  {
+    super(s); this.line = line; this.row = row; this.path = path;
+  }
+}
+
 class LexerOutput {
   immutable(Token)[] tokens;
   string unread;
-  size_t lines;
+  size_t lines = 1;
   size_t rows;
 
   void merge(const LexerOutput that) pure nothrow @safe {
@@ -86,7 +98,7 @@ static immutable(Token)[] tokenizeFileAt(const string path) {
   LexerOutput output;
 
   try {
-    output = tokenize(readText(path));
+    output = tokenize(readText(path), path);
   }
   catch (Exception e) {
     throw new Exception("Error reading file at path '" ~ path ~ "'");
@@ -123,13 +135,20 @@ private static bool isPunctuation(const char c) pure nothrow @safe {
   }
 }
 
-private static LexerOutput tokenize(const string input) pure nothrow @safe {
+private static LexerOutput tokenize(
+    const string input,
+    const string path = null
+  )
+  pure nothrow @safe
+{
   auto output = new LexerOutput;
   size_t unreadIndex;
   string buff;
 
   foreach (i, c; input) {
     bool whitespace;
+
+    size_t line = output.lines, row = output.rows;
 
     if (c == ' ' || c == '\t') {
       whitespace = true;
@@ -151,6 +170,9 @@ private static LexerOutput tokenize(const string input) pure nothrow @safe {
 
       if (buff.length > 0) {
         auto token = nextToken(buff);
+        token.line = line;
+        token.row = row;
+        token.path = path;
 
         if (token.isInvalid) {
           size_t j;
@@ -158,7 +180,12 @@ private static LexerOutput tokenize(const string input) pure nothrow @safe {
             if (buff[j].isPunctuation) break;
           }
           if (whitespace || (0 < j && j < buff.length)) {
-            output.tokens ~= Token(buff[0..j]);
+            auto token1 = Token(buff[0..j]);
+            token1.line = line;
+            token1.row = row;
+            token1.path = path;
+
+            output.tokens ~= token1;
             buff = buff[j..$];
             unreadIndex = i - buff.length + 1;
           }

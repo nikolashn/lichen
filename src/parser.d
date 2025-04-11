@@ -16,22 +16,34 @@ import syntax;
    term -> "0" | identifier | "{" (expr ("," expr)?)? "}"
  +/
 
-class SyntaxException : Exception { this() pure nothrow @safe { super(""); } }
-class EOFException : Exception { this() pure nothrow @safe { super(""); } }
+class EOFException : Exception {
+  string path;
+  this(string path = null) pure nothrow @safe {
+    super("Unexpected end of input");
+    this.path = path;
+  }
+}
 
 private class Parser {
+  private immutable string path;
   private immutable(Token)[] tokens;
   private size_t index;
   private size_t[] tracks;
 
-  this(immutable(Token)[] ts) pure nothrow @safe { tokens = ts; }
+  this(immutable(Token)[] ts, immutable string s = null) pure nothrow @safe {
+    tokens = ts; path = s;
+  }
 
   bool done() pure nothrow @safe const {
     return index >= tokens.length;
   }
 
+  Token top() pure nothrow @safe const {
+    return tokens.back;
+  }
+
   bool consume(Token token) pure @safe {
-    if (done) throw new EOFException;
+    if (done) throw new EOFException(path);
 
     if (token == tokens[index]) {
       debug writeln("Consumed ", token, " at index ", index);
@@ -42,7 +54,7 @@ private class Parser {
   }
 
   string consumeIdentifier() pure @safe {
-    if (done) throw new EOFException;
+    if (done) throw new EOFException(path);
 
     auto x = tokens[index].getIdentifier;
 
@@ -110,7 +122,8 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
 
     p.backtrack;
 
-    throw new SyntaxException;
+    throw new TokenException(
+      "Invalid syntax", p.top.line, p.top.row, p.top.path);
   }
 
   debug writeln("Finished parsing");
