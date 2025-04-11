@@ -5,7 +5,7 @@ axiomatic set theory.
 
 ## Building
 
-`make`.
+`make`, using `ldc2`.
 
 ## Sets
 

@@ -25,25 +25,31 @@ class EOFException : Exception {
 }
 
 private class Parser {
-  private immutable string path;
   private immutable(Token)[] tokens;
   private size_t index;
   private size_t[] tracks;
 
-  this(immutable(Token)[] ts, immutable string s = null) pure nothrow @safe {
-    tokens = ts; path = s;
+  this(immutable(Token)[] ts) pure nothrow @safe {
+    tokens = ts;
   }
 
   bool done() pure nothrow @safe const {
     return index >= tokens.length;
   }
 
-  Token top() pure nothrow @safe const {
-    return tokens.back;
+  void throwIfDone() pure @safe const {
+    if (done) {
+      throw new EOFException(tokens.length > 0 ? tokens.back.path : null);
+    }
+  }
+
+  Token top() pure @safe const {
+    throwIfDone;
+    return tokens[index];
   }
 
   bool consume(Token token) pure @safe {
-    if (done) throw new EOFException(path);
+    throwIfDone;
 
     if (token == tokens[index]) {
       debug writeln("Consumed ", token, " at index ", index);
@@ -54,7 +60,7 @@ private class Parser {
   }
 
   string consumeIdentifier() pure @safe {
-    if (done) throw new EOFException(path);
+    throwIfDone;
 
     auto x = tokens[index].getIdentifier;
 
@@ -100,11 +106,17 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
   Stmt[] program;
 
   while (!p.done) {
+    immutable line = p.top.line, row = p.top.row;
+    immutable string path = p.top.path;
+
     p.track;
     auto expr = pExpr(p);
 
     if (expr !is null && p.consume(Token(';'))) {
-      program ~= Stmt(expr);
+      auto stmt = Stmt(expr);
+      stmt.line = line; stmt.row = row; stmt.path = path;
+      program ~= stmt;
+
       p.untrack;
       continue;
     }
@@ -115,7 +127,10 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
     auto def = pDef(p);
 
     if (def !is null) {
-      program ~= Stmt(def);
+      auto stmt = Stmt(def);
+      stmt.line = line; stmt.row = row; stmt.path = path;
+      program ~= stmt;
+
       p.untrack;
       continue;
     }
@@ -135,7 +150,7 @@ private static Def* pDef(Parser p) pure @safe {
   auto expr = pExpr(p);
 
   if (expr !is null) {
-    string x = (*expr).match!(
+    string x = expr.val.match!(
       (Variable var) => var.name,
       _ => null
     );
@@ -156,6 +171,9 @@ private static Def* pDef(Parser p) pure @safe {
 }
 
 private static Expr* pExpr(Parser p) pure @safe {
+  immutable line = p.top.line, row = p.top.row;
+  immutable string path = p.top.path;
+
   p.track;
   auto term = pTerm(p);
 
@@ -172,16 +190,22 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
 
       if (expr !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.MEMBER, term, expr));
+        result.line = line; result.row = row; result.path = path;
+
         p.untrack;
-        return new Expr(BinOp(BinOp.Type.MEMBER, term, expr));
+        return result;
       }
     }
     else if (p.consume(Token(Token.Special.NEQUAL))) {
       auto expr = pExpr(p);
 
       if (expr !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.NEQUAL, term, expr));
+        result.line = line; result.row = row; result.path = path;
+
         p.untrack;
-        return new Expr(BinOp(BinOp.Type.NEQUAL, term, expr));
+        return result;
       }
     }
     else {
@@ -196,13 +220,20 @@ private static Expr* pExpr(Parser p) pure @safe {
 }
 
 private static Expr* pTerm(Parser p) pure @safe {
+  immutable line = p.top.line, row = p.top.row;
+  immutable string path = p.top.path;
+
   if (p.consume(Token('0'))) {
-    return new Expr(Zero());
+    auto result = new Expr(Zero());
+    result.line = line; result.row = row; result.path = path;
+    return result;
   }
   
   auto x = p.consumeIdentifier;
   if (x !is null) {
-    return new Expr(Variable(x));
+    auto result = new Expr(Variable(x));
+    result.line = line; result.row = row; result.path = path;
+    return result;
   }
 
   p.track;
@@ -213,18 +244,25 @@ private static Expr* pTerm(Parser p) pure @safe {
       if (p.consume(Token(','))) {
         auto expr1 = pExpr(p);
         if (expr !is null && p.consume(Token('}'))) {
+          auto result = new Expr(Pair(expr, expr1));
+          result.line = line; result.row = row; result.path = path;
+
           p.untrack;
-          return new Expr(Pair(expr, expr1));
+          return result;
         }
       }
       else if (p.consume(Token('}'))) {
+        auto result = new Expr(Single(expr));
+        result.line = line; result.row = row; result.path = path;
+
         p.untrack;
-        return new Expr(Single(expr));
+        return result;
       }
     }
     else if (p.consume(Token('}'))) {
-      p.untrack;
-      return new Expr(Zero());
+      auto result = new Expr(Zero());
+      result.line = line; result.row = row; result.path = path;
+      return result;
     }
   }
 

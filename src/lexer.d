@@ -83,8 +83,7 @@ class TokenException : Exception {
 class LexerOutput {
   immutable(Token)[] tokens;
   string unread;
-  size_t lines = 1;
-  size_t rows;
+  size_t lines = 1, rows = 1;
 
   void merge(const LexerOutput that) pure nothrow @safe {
     tokens ~= that.tokens;
@@ -170,9 +169,7 @@ private static LexerOutput tokenize(
 
       if (buff.length > 0) {
         auto token = nextToken(buff);
-        token.line = line;
-        token.row = row;
-        token.path = path;
+        token.line = line; token.row = row; token.path = path;
 
         if (token.isInvalid) {
           size_t j;
@@ -181,9 +178,7 @@ private static LexerOutput tokenize(
           }
           if (whitespace || (0 < j && j < buff.length)) {
             auto token1 = Token(buff[0..j]);
-            token1.line = line;
-            token1.row = row;
-            token1.path = path;
+            token1.line = line; token1.row = row; token1.path = path;
 
             output.tokens ~= token1;
             buff = buff[j..$];

@@ -5,17 +5,36 @@ import std.typecons;
 
 /+ Statements +/
 
-alias Stmt = SumType!(Expr*, Def*);
+struct Stmt {
+  alias Type = SumType!(Expr*, Def*);
+  Type val;
+  size_t line, row;
+  string path;
+
+  this(Expr* e) pure nothrow @safe { val = e; }
+  this(Def* d) pure nothrow @safe { val = d; }
+}
 
 /+ Expressions +/
 
-alias Expr = SumType!(
-  Zero,
-  BinOp,
-  Variable,
-  Single,
-  Pair
-);
+struct Expr {
+  alias Type = SumType!(
+    Zero,
+    BinOp,
+    Variable,
+    Single,
+    Pair
+  );
+  Type val;
+  size_t line, row;
+  string path;
+
+  this(Zero x) pure nothrow @safe { val = x; }
+  this(BinOp x) pure nothrow @safe { val = x; }
+  this(Variable x) pure nothrow @safe { val = x; }
+  this(Single x) pure nothrow @safe { val = x; }
+  this(Pair x) pure nothrow @safe { val = x; }
+}
 
 struct Zero { }
 
