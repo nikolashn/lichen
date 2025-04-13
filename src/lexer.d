@@ -9,23 +9,23 @@ import std.typecons;
 
 struct Token {
   enum Special {
-    INVALID,
+    NONE,
     DEFINE,
     NEQUAL
   }
 
   alias TokenVal = SumType!(char, Special, string);
   immutable TokenVal val;
-  size_t line, row;
+  size_t line, col;
   string path;
 
   this(const char c) pure nothrow @safe { val = c; }
   this(const Special x) pure nothrow @safe { val = x; }
   this(const string x) pure nothrow @safe { val = x; }
 
-  bool isInvalid() pure nothrow @safe const {
+  bool isNone() pure nothrow @safe const {
     return val.match!(
-      (Special x) => x == Special.INVALID,
+      (Special x) => x == Special.NONE,
       _ => false
     );
   }
@@ -56,10 +56,10 @@ struct Token {
 
   string toString() pure nothrow @safe const {
     return val.match!(
-      (immutable char c) => [ c ],
+      (immutable char c) => [ '"', c, '"' ],
       (Special x) {
         switch (x) {
-          case Special.INVALID: return "[INVALID]";
+          case Special.NONE: return "[NONE]";
           case Special.DEFINE: return ":=";
           case Special.NEQUAL: return "/=";
           default: assert(false);
@@ -71,143 +71,124 @@ struct Token {
 }
 
 class TokenException : Exception {
-  size_t line, row;
+  size_t line, col;
   string path;
-  this(string s, size_t line, size_t row, string path = null)
+  this(string s, size_t line, size_t col, string path = null)
     pure nothrow @safe
   {
-    super(s); this.line = line; this.row = row; this.path = path;
+    super(s); this.line = line; this.col = col; this.path = path;
   }
 }
 
-class LexerOutput {
+struct Lexer {
   immutable(Token)[] tokens;
-  string unread;
-  size_t lines = 1, rows = 1;
+  size_t lines = 1, cols = 1;
+  size_t current;
+  const string input, path;
 
-  void merge(const LexerOutput that) pure nothrow @safe {
-    tokens ~= that.tokens;
-    unread = that.unread;
-    lines += that.lines;
-    rows = that.lines == 0 ? rows + that.rows : that.rows;
+  this(const string s, const string p = null) pure nothrow @safe {
+    input = s; path = p;
+  }
+
+  void tokenize() pure nothrow @safe {
+    while (!done) {
+      auto c = input[current];
+      auto t = getToken;
+      t.line = lines; t.col = cols; t.path = path;
+
+      if (!t.isNone)
+        add(t);
+
+      if (c == '\n') {
+        lines += 1;
+        cols = 1;
+      }
+    }
+  }
+
+  private void add(const Token t) pure nothrow @safe { tokens ~= t; }
+
+  private bool done() pure nothrow @safe const {
+    return current >= input.length;
+  }
+
+  private bool nextDone() pure nothrow @safe const {
+    return current >= input.length + 1;
+  }
+
+  private char next() pure nothrow @safe {
+    auto c = input[current];
+    current += 1;
+    cols += 1;
+    return c;
+  }
+
+  private bool match(const char c) pure nothrow @safe {
+    if (done) return false;
+    if (input[current] != c) return false;
+    current += 1;
+    cols += 1;
+    return true;
+  }
+
+  private static bool canIdentifier(const char c) pure nothrow @safe {
+    switch (c) {
+      case ':', '/', '=', '<', '0', ';', ',', '{', '}', '~', '|', '&', '(', ')',
+           '\n', ' ', '\t':
+      {
+        return false;
+      }
+      default:
+        return true;
+    }
+  }
+
+  private Token getToken() pure nothrow @safe {
+    auto c = next;
+    switch (c) {
+      case ':':
+        return match('=') ? Token(Token.Special.DEFINE) : Token('=');
+
+      case '/':
+        return match('=') ? Token(Token.Special.NEQUAL) : Token('/');
+
+      case '=', '<', '0', ';', ',', '{', '}', '~', '|', '&', '(', ')':
+        return Token(c);
+
+      case '\n', ' ', '\t':
+        return Token(Token.Special.NONE);
+
+      default:
+        assert(canIdentifier(c));
+
+        if (c == 'U') {
+          if (nextDone || !canIdentifier(input[current + 1]))
+            return Token(c);
+        }
+
+        string name;
+        name ~= c;
+
+        while (!done && canIdentifier(input[current])) {
+          name ~= next;
+        }
+
+        return Token(name);
+    }
   }
 }
 
 static immutable(Token)[] tokenizeFileAt(const string path) {
-  LexerOutput output;
+  Lexer lexer = Lexer(readText(path), path);
 
   try {
-    output = tokenize(readText(path), path);
+    lexer.tokenize;
   }
   catch (Exception e) {
     throw new Exception("Could not read file at path '" ~ path ~ "'");
   }
-
-  if (output.unread.length > 0) {
-    debug output.tokens.writeln;
-    throw new Exception("Invalid token in file at path '" ~ path ~ 
-      "' on line " ~ to!string(output.lines) ~ ":" ~ to!string(output.rows));
-  }
   
-  debug output.tokens.writeln;
-  return output.tokens;
-}
-
-private static Token nextToken(const string buff) pure nothrow @safe {
-  if (buff == "=")  return Token('=');
-  if (buff == "<")  return Token('<');
-  if (buff == "0")  return Token('0');
-  if (buff == ";")  return Token(';');
-  if (buff == ",")  return Token(',');
-  if (buff == "{")  return Token('{');
-  if (buff == "}")  return Token('}');
-  if (buff == "~")  return Token('~');
-  if (buff == "|")  return Token('|');
-  if (buff == "&")  return Token('&');
-  if (buff == "(")  return Token('(');
-  if (buff == ")")  return Token(')');
-  if (buff == ":=") return Token(Token.Special.DEFINE);
-  if (buff == "/=") return Token(Token.Special.NEQUAL);
-  return Token(Token.Special.INVALID);
-}
-
-private static bool isPunctuation(const char c) pure nothrow @safe {
-  switch (c) {
-    case '=', '<', '0', ';', ':', ',', '{', '}', '/', '~', '|', '&', '(', ')':
-      return true;
-    default:
-      return false;
-  }
-}
-
-private static LexerOutput tokenize(
-    const string input,
-    const string path = null
-  )
-  pure nothrow @safe
-{
-  auto output = new LexerOutput;
-  size_t unreadIndex;
-  string buff;
-
-  foreach (i, c; input) {
-    bool whitespace;
-
-    size_t line = output.lines, row = output.rows;
-
-    if (c == ' ' || c == '\t') {
-      whitespace = true;
-    }
-    else if (c == '\n') {
-      output.lines += 1;
-      output.rows = 0;
-      whitespace = true;
-    }
-    else {
-      buff ~= c;
-    }
-
-    output.rows += 1;
-
-    bool repeat;
-    do {
-      repeat = false;
-
-      if (buff.length > 0) {
-        auto token = nextToken(buff);
-
-        if (token.isInvalid) {
-          size_t j;
-          for (j = 1; j < buff.length; ++j) {
-            if (buff[j].isPunctuation) break;
-          }
-          if (j < buff.length || whitespace) {
-            auto token1 = Token(buff[0..j]);
-            token1.line = line; token1.row = row; token1.path = path;
-
-            output.tokens ~= token1;
-            buff = buff[j..$];
-            unreadIndex = i - buff.length + 1;
-
-            repeat = true;
-          }
-        }
-        else {
-          token.line = line; token.row = row; token.path = path;
-          output.tokens ~= token;
-          buff = "";
-          unreadIndex = i + 1;
-        }
-      }
-      else {
-        unreadIndex = i + 1;
-      }
-    }
-    while (repeat);
-  }
-
-  output.unread = input[unreadIndex..$];
-
-  return output;
+  debug lexer.tokens.writeln;
+  return lexer.tokens;
 }
 

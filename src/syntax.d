@@ -8,7 +8,7 @@ import std.typecons;
 struct Stmt {
   alias Type = SumType!(Expr*, Def*);
   Type val;
-  size_t line, row;
+  size_t line, col;
   string path;
 
   this(Expr* e) pure nothrow @safe { val = e; }
@@ -27,7 +27,7 @@ struct Expr {
     Pair
   );
   Type val;
-  size_t line, row;
+  size_t line, col;
   string path;
 
   this(Zero x) pure nothrow @safe { val = x; }
@@ -42,7 +42,8 @@ struct Zero { }
 
 struct UnOp {
   enum Type {
-    LNOT
+    LNOT,
+    UNION
   }
 
   const Type type;

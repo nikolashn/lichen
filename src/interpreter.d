@@ -16,13 +16,13 @@ struct Env {
   Value* find(
       const string x,
       const size_t line,
-      const size_t row,
+      const size_t col,
       const string path = null)
     pure @safe const
   {
     if (x !in entries) {
       throw new TokenException("Used undefined identifier '" ~ x ~ "'",
-        line, row, path);
+        line, col, path);
     }
     return entries[x];
   }
@@ -44,9 +44,9 @@ static void interpret(Stmt[] program) @safe {
           (bool b) {
             if (!b) {
               stmt.path is null
-                ? writeln("Assertion failed on line ", stmt.line, ":", stmt.row)
+                ? writeln("Assertion failed on line ", stmt.line, ":", stmt.col)
                 : writeln("Assertion failed at path '", stmt.path, "' on line ",
-                    stmt.line, ":", stmt.row);
+                    stmt.line, ":", stmt.col);
             }
           }
         );
@@ -74,7 +74,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
         case UnOp.Type.LNOT:
           if (!v1.isBool) {
             throw new TokenException("The operand of a logical NOT " ~
-              "expression must be a logical expression", e.line, e.row, e.path);
+              "expression must be a logical expression", e.line, e.col, e.path);
           }
 
           auto b1 = (*v1).get!(const bool);
@@ -92,7 +92,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
         case BinOp.Type.EQUALS:
           if (!v1.isSet || !v2.isSet) {
             throw new TokenException("Both sides of an equality must be sets",
-              e.line, e.row, e.path);
+              e.line, e.col, e.path);
           }
 
           auto set1 = (*v1).get!Set;
@@ -103,7 +103,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           if (!v1.isSet || !v2.isSet) {
             throw new TokenException(
               "Both sides of a membership test must be sets",
-              e.line, e.row, e.path);
+              e.line, e.col, e.path);
           }
 
           auto set1 = (*v1).get!Set;
@@ -113,7 +113,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
         case BinOp.Type.NEQUAL:
           if (!v1.isSet || !v2.isSet) {
             throw new TokenException("Both sides of an inequality must be sets",
-              e.line, e.row, e.path);
+              e.line, e.col, e.path);
           }
 
           auto set1 = (*v1).get!Set;
@@ -124,7 +124,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           if (!v1.isBool || !v2.isBool) {
             throw new TokenException(
               "Both sides of a logical AND expression and must be " ~ 
-              "logical expressions", e.line, e.row, e.path);
+              "logical expressions", e.line, e.col, e.path);
           }
 
           auto b1 = (*v1).get!(const bool);
@@ -135,7 +135,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           if (!v1.isBool || !v2.isBool) {
             throw new TokenException(
               "Both sides of a logical OR expression and must be " ~ 
-              "logical expressions", e.line, e.row, e.path);
+              "logical expressions", e.line, e.col, e.path);
           }
 
           auto b1 = (*v1).get!(const bool);
@@ -145,13 +145,13 @@ static Value* eval(const Expr* e, const Env env) pure @safe
         default: assert(false);
       }
     },
-    (Variable var) => env.find(var.name, e.line, e.row, e.path),
+    (Variable var) => env.find(var.name, e.line, e.col, e.path),
     (Single s) {
       auto v = eval(s.member, env);
 
       if (!v.isSet)
         throw new TokenException("Sets may only contain other sets",
-          e.line, e.row, e.path);
+          e.line, e.col, e.path);
 
       auto set = (*v).get!Set;
       return new Value(new Set(set));
@@ -162,7 +162,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
 
       if (!v1.isSet || !v2.isSet)
         throw new TokenException("Sets may only contain other sets",
-          e.line, e.row, e.path);
+          e.line, e.col, e.path);
 
       auto set1 = (*v1).get!Set;
       auto set2 = (*v2).get!Set;

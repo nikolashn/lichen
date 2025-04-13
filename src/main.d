@@ -19,9 +19,9 @@ int main(string[] args) {
   }
   catch (TokenException e) {
     e.path is null
-      ? stderr.writeln("Error on line ", e.line, ":", e.row, ": ", e.msg)
+      ? stderr.writeln("Error on line ", e.line, ":", e.col, ": ", e.msg)
       : stderr.writeln(
-          "Error at path '", e.path, "' on line ", e.line, ":", e.row,
+          "Error at path '", e.path, "' on line ", e.line, ":", e.col,
           ": ", e.msg);
   }
   catch (EOFException e) {

@@ -15,7 +15,7 @@ import syntax;
    expr -> pseudatom ("&" expr | "|" expr)?
    pseudatom -> "~" pseudatom | "(" expr ")" | atom
    atom -> term ("=" term | "<" term | "/=" term)?
-   term -> "0" | identifier | "{" (expr ("," expr)?)? "}"
+   term -> "0" | identifier | "U" term | "{" (term ("," term)?)? "}"
  +/
 
 class EOFException : Exception {
@@ -108,7 +108,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
   Stmt[] program;
 
   while (!p.done) {
-    immutable line = p.top.line, row = p.top.row;
+    immutable line = p.top.line, col = p.top.col;
     immutable string path = p.top.path;
 
     p.track;
@@ -116,7 +116,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
 
     if (expr !is null && p.consume(Token(';'))) {
       auto stmt = Stmt(expr);
-      stmt.line = line; stmt.row = row; stmt.path = path;
+      stmt.line = line; stmt.col = col; stmt.path = path;
       program ~= stmt;
 
       p.untrack;
@@ -130,7 +130,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
 
     if (def !is null) {
       auto stmt = Stmt(def);
-      stmt.line = line; stmt.row = row; stmt.path = path;
+      stmt.line = line; stmt.col = col; stmt.path = path;
       program ~= stmt;
 
       p.untrack;
@@ -140,7 +140,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
     p.backtrack;
 
     throw new TokenException(
-      "Invalid syntax", p.top.line, p.top.row, p.top.path);
+      "Invalid syntax", p.top.line, p.top.col, p.top.path);
   }
 
   debug writeln("Finished parsing");
@@ -173,7 +173,7 @@ private static Def* pDef(Parser p) pure @safe {
 }
 
 private static Expr* pExpr(Parser p) pure @safe {
-  immutable line = p.top.line, row = p.top.row;
+  immutable line = p.top.line, col = p.top.col;
   immutable string path = p.top.path;
 
   p.track;
@@ -183,7 +183,7 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
       if (expr !is null) {
         auto result = new Expr(BinOp(BinOp.Type.LAND, pseudatom, expr));
-        result.line = line; result.row = row; result.path = path;
+        result.line = line; result.col = col; result.path = path;
 
         p.untrack;
         return result;
@@ -193,7 +193,7 @@ private static Expr* pExpr(Parser p) pure @safe {
       auto expr = pExpr(p);
       if (expr !is null) {
         auto result = new Expr(BinOp(BinOp.Type.LOR, pseudatom, expr));
-        result.line = line; result.row = row; result.path = path;
+        result.line = line; result.col = col; result.path = path;
 
         p.untrack;
         return result;
@@ -211,7 +211,7 @@ private static Expr* pExpr(Parser p) pure @safe {
 }
 
 private static Expr* pPseudatom(Parser p) pure @safe {
-  immutable line = p.top.line, row = p.top.row;
+  immutable line = p.top.line, col = p.top.col;
   immutable string path = p.top.path;
 
   p.track;
@@ -219,7 +219,7 @@ private static Expr* pPseudatom(Parser p) pure @safe {
     auto pseudatom = pPseudatom(p);
     if (pseudatom !is null) {
       auto result = new Expr(UnOp(UnOp.Type.LNOT, pseudatom));
-      result.line = line; result.row = row; result.path = path;
+      result.line = line; result.col = col; result.path = path;
 
       p.untrack;
       return result;
@@ -253,7 +253,7 @@ private static Expr* pPseudatom(Parser p) pure @safe {
 }
 
 private static Expr* pAtom(Parser p) pure @safe {
-  immutable line = p.top.line, row = p.top.row;
+  immutable line = p.top.line, col = p.top.col;
   immutable string path = p.top.path;
 
   p.track;
@@ -273,7 +273,7 @@ private static Expr* pAtom(Parser p) pure @safe {
 
       if (term1 !is null) {
         auto result = new Expr(BinOp(BinOp.Type.MEMBER, term, term1));
-        result.line = line; result.row = row; result.path = path;
+        result.line = line; result.col = col; result.path = path;
 
         p.untrack;
         return result;
@@ -284,7 +284,7 @@ private static Expr* pAtom(Parser p) pure @safe {
 
       if (term1 !is null) {
         auto result = new Expr(BinOp(BinOp.Type.NEQUAL, term, term1));
-        result.line = line; result.row = row; result.path = path;
+        result.line = line; result.col = col; result.path = path;
 
         p.untrack;
         return result;
@@ -302,40 +302,53 @@ private static Expr* pAtom(Parser p) pure @safe {
 }
 
 private static Expr* pTerm(Parser p) pure @safe {
-  immutable line = p.top.line, row = p.top.row;
+  immutable line = p.top.line, col = p.top.col;
   immutable string path = p.top.path;
 
   if (p.consume(Token('0'))) {
     auto result = new Expr(Zero());
-    result.line = line; result.row = row; result.path = path;
+    result.line = line; result.col = col; result.path = path;
     return result;
   }
   
   auto x = p.consumeIdentifier;
   if (x !is null) {
     auto result = new Expr(Variable(x));
-    result.line = line; result.row = row; result.path = path;
+    result.line = line; result.col = col; result.path = path;
     return result;
   }
 
   p.track;
+  if (p.consume(Token('U'))) {
+    auto term = pTerm(p);
+    if (term !is null) {
+      auto result = new Expr(UnOp(UnOp.Type.UNION, term));
+      result.line = line; result.col = col; result.path = path;
 
+      p.untrack;
+      return result;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
   if (p.consume(Token('{'))) {
-    auto expr = pExpr(p);
-    if (expr !is null) {
+    auto term = pTerm(p);
+    if (term !is null) {
       if (p.consume(Token(','))) {
-        auto expr1 = pExpr(p);
-        if (expr !is null && p.consume(Token('}'))) {
-          auto result = new Expr(Pair(expr, expr1));
-          result.line = line; result.row = row; result.path = path;
+        auto term1 = pTerm(p);
+        if (term1 !is null && p.consume(Token('}'))) {
+          auto result = new Expr(Pair(term, term1));
+          result.line = line; result.col = col; result.path = path;
 
           p.untrack;
           return result;
         }
       }
       else if (p.consume(Token('}'))) {
-        auto result = new Expr(Single(expr));
-        result.line = line; result.row = row; result.path = path;
+        auto result = new Expr(Single(term));
+        result.line = line; result.col = col; result.path = path;
 
         p.untrack;
         return result;
@@ -343,7 +356,7 @@ private static Expr* pTerm(Parser p) pure @safe {
     }
     else if (p.consume(Token('}'))) {
       auto result = new Expr(Zero());
-      result.line = line; result.row = row; result.path = path;
+      result.line = line; result.col = col; result.path = path;
       return result;
     }
   }
