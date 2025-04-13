@@ -32,6 +32,11 @@ If `x`, `y` are sets, then `{ x }`, the set whose only element is `x`, and
 `{ x, y }`, whose only elements are `x` and `y`, are sets. For each set `x`,
 `{ x }` is equal to `{ x, x }`.
 
+### Union
+
+If `x` is a set, then `U x` is the set whose elements are exactly those that are
+members of some `y` such that `y < x`.
+
 ## Statements
 
 Statements are either definitions, assertions or value statements. Instances of

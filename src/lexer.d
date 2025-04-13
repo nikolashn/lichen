@@ -92,9 +92,11 @@ struct Lexer {
 
   void tokenize() pure nothrow @safe {
     while (!done) {
+      auto line = lines, col = cols, p = path;
       auto c = input[current];
+
       auto t = getToken;
-      t.line = lines; t.col = cols; t.path = path;
+      t.line = line; t.col = col; t.path = p;
 
       if (!t.isNone)
         add(t);
@@ -110,10 +112,6 @@ struct Lexer {
 
   private bool done() pure nothrow @safe const {
     return current >= input.length;
-  }
-
-  private bool nextDone() pure nothrow @safe const {
-    return current >= input.length + 1;
   }
 
   private char next() pure nothrow @safe {
@@ -162,7 +160,9 @@ struct Lexer {
         assert(canIdentifier(c));
 
         if (c == 'U') {
-          if (nextDone || !canIdentifier(input[current + 1]))
+          if (done) return Token(c);
+          auto d = input[current];
+          if (d == 'U' || !canIdentifier(d))
             return Token(c);
         }
 

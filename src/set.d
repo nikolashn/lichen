@@ -23,6 +23,7 @@ const class Set {
   this(Set s1, Set s2) pure nothrow @safe const {
     val = Finite([s1, s2]);
   }
+  this(Set[] ss) pure nothrow @safe const { val = Finite(ss); }
 
   override string toString() pure nothrow @safe const {
     return val.match!(
@@ -73,6 +74,29 @@ const class Set {
 
   bool equals(Set o) pure nothrow @safe const {
     return subset(o) && o.subset(this);
+  }
+
+  Set setUnion() pure nothrow @safe const {
+    return val.match!(
+      (Empty _) => new Set,
+      (Finite fin) {
+        Set[] newArr = [];
+
+        foreach (elem; fin.arr) {
+          elem.val.match!(
+            (Empty _) {},
+            (Finite elemFin) {
+              newArr ~= elemFin.arr;
+            }
+          );
+        }
+
+        if (newArr.length > 0)
+          return new Set(newArr);
+
+        return new Set;
+      }
+    );
   }
 }
 
