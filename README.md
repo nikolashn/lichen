@@ -35,7 +35,9 @@ If `x`, `y` are sets, then `{ x }`, the set whose only element is `x`, and
 ### Union
 
 If `x` is a set, then `U x` is the set whose elements are exactly those that are
-members of some `y` such that `y < x`.
+members of some `z` which is an element of `x`.
+
+If `x` and `y` are sets, then `x U y` denotes `U{ x, y }`.
 
 ## Statements
 
