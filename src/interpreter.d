@@ -88,6 +88,15 @@ static Value* eval(const Expr* e, const Env env) pure @safe
 
           auto s1 = (*v1).get!(const Set);
           return new Value(s1.setUnion);
+
+        case UnOp.Type.POWERSET:
+          if (!v1.isSet) {
+            throw new TokenException("The operand of a power set expression " ~
+              "must be a set", e.line, e.col, e.path);
+          }
+
+          auto s1 = (*v1).get!(const Set);
+          return new Value(Set.powerSet(s1));
           
         default: assert(false);
       }

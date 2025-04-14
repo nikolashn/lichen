@@ -43,7 +43,8 @@ struct Zero { }
 struct UnOp {
   enum Type {
     LNOT,
-    UNION
+    UNION,
+    POWERSET
   }
 
   const Type type;

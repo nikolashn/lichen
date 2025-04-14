@@ -169,6 +169,9 @@ struct Lexer {
         if (name == "U")
           return Token('U');
 
+        if (name == "P")
+          return Token('P');
+
         return Token(name);
     }
   }

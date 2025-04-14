@@ -16,7 +16,7 @@ import syntax;
    pseudatom -> atom | "~" pseudatom | "(" expr ")"
    atom -> set ("=" set | "<" set | "/=" set)?
    set -> term ("U" set)?
-   term -> "0" | identifier | "U" term | "{" (term ("," term)?)? "}" 
+   term -> "0" | identifier | "U" term | "P" term | "{" (term ("," term)?)? "}" 
          | "(" set ")"
  +/
 
@@ -356,6 +356,20 @@ private static Expr* pTerm(Parser p) pure @safe {
     auto term = pTerm(p);
     if (term !is null) {
       auto result = new Expr(UnOp(UnOp.Type.UNION, term));
+      result.line = line; result.col = col; result.path = path;
+
+      p.untrack;
+      return result;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  if (p.consume(Token('P'))) {
+    auto term = pTerm(p);
+    if (term !is null) {
+      auto result = new Expr(UnOp(UnOp.Type.POWERSET, term));
       result.line = line; result.col = col; result.path = path;
 
       p.untrack;
