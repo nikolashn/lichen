@@ -159,19 +159,15 @@ struct Lexer {
       default:
         assert(canIdentifier(c));
 
-        if (c == 'U') {
-          if (done) return Token(c);
-          auto d = input[current];
-          if (d == 'U' || !canIdentifier(d))
-            return Token(c);
-        }
-
         string name;
         name ~= c;
 
         while (!done && canIdentifier(input[current])) {
           name ~= next;
         }
+
+        if (name == "U")
+          return Token('U');
 
         return Token(name);
     }

@@ -14,7 +14,8 @@ import syntax;
    def -> identifier ":=" expr ";"
    expr -> pseudatom ("&" expr | "|" expr)?
    pseudatom -> "~" pseudatom | "(" expr ")" | atom
-   atom -> term ("=" term | "<" term | "/=" term)?
+   atom -> set ("=" set | "<" set | "/=" set)?
+   set -> term ("U" set)?
    term -> "0" | identifier | "U" term | "{" (term ("," term)?)? "}"
  +/
 
@@ -257,22 +258,22 @@ private static Expr* pAtom(Parser p) pure @safe {
   immutable string path = p.top.path;
 
   p.track;
-  auto term = pTerm(p);
+  auto set = pSet(p);
 
-  if (term !is null) {
+  if (set !is null) {
     if (p.consume(Token('='))) {
-      auto term1 = pTerm(p);
+      auto set1 = pSet(p);
 
-      if (term1 !is null) {
+      if (set1 !is null) {
         p.untrack;
-        return new Expr(BinOp(BinOp.Type.EQUALS, term, term1));
+        return new Expr(BinOp(BinOp.Type.EQUALS, set, set1));
       }
     }
     else if (p.consume(Token('<'))) {
-      auto term1 = pTerm(p);
+      auto set1 = pSet(p);
 
-      if (term1 !is null) {
-        auto result = new Expr(BinOp(BinOp.Type.MEMBER, term, term1));
+      if (set1 !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.MEMBER, set, set1));
         result.line = line; result.col = col; result.path = path;
 
         p.untrack;
@@ -280,10 +281,41 @@ private static Expr* pAtom(Parser p) pure @safe {
       }
     }
     else if (p.consume(Token(Token.Special.NEQUAL))) {
-      auto term1 = pTerm(p);
+      auto set1 = pSet(p);
 
-      if (term1 !is null) {
-        auto result = new Expr(BinOp(BinOp.Type.NEQUAL, term, term1));
+      if (set1 !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.NEQUAL, set, set1));
+        result.line = line; result.col = col; result.path = path;
+
+        p.untrack;
+        return result;
+      }
+    }
+    else {
+      p.untrack;
+      return set;
+    }
+  }
+
+  p.backtrack;
+
+  return null;
+}
+
+private static Expr* pSet(Parser p) pure @safe {
+  immutable line = p.top.line, col = p.top.col;
+  immutable string path = p.top.path;
+
+  p.track;
+  auto term = pTerm(p);
+
+  if (term !is null) {
+    if (p.consume(Token('U'))) {
+      auto set = pSet(p);
+      
+      if (set !is null) {
+        auto result =
+          new Expr(UnOp(UnOp.Type.UNION, new Expr(Pair(term, set))));
         result.line = line; result.col = col; result.path = path;
 
         p.untrack;
