@@ -13,10 +13,11 @@ import syntax;
    program -> { expr ";" | def }
    def -> identifier ":=" expr ";"
    expr -> pseudatom ("&" expr | "|" expr)?
-   pseudatom -> "~" pseudatom | "(" expr ")" | atom
+   pseudatom -> atom | "~" pseudatom | "(" expr ")"
    atom -> set ("=" set | "<" set | "/=" set)?
    set -> term ("U" set)?
-   term -> "0" | identifier | "U" term | "{" (term ("," term)?)? "}"
+   term -> "0" | identifier | "U" term | "{" (term ("," term)?)? "}" 
+         | "(" set ")"
  +/
 
 class EOFException : Exception {
@@ -216,6 +217,16 @@ private static Expr* pPseudatom(Parser p) pure @safe {
   immutable string path = p.top.path;
 
   p.track;
+  auto atom = pAtom(p);
+
+  if (atom !is null) {
+    p.untrack;
+    return atom;
+  }
+
+  p.backtrack;
+
+  p.track;
   if (p.consume(Token('~'))) {
     auto pseudatom = pPseudatom(p);
     if (pseudatom !is null) {
@@ -236,16 +247,6 @@ private static Expr* pPseudatom(Parser p) pure @safe {
       p.untrack;
       return expr;
     }
-  }
-
-  p.backtrack;
-
-  p.track;
-  auto atom = pAtom(p);
-
-  if (atom !is null) {
-    p.untrack;
-    return atom;
   }
 
   p.backtrack;
@@ -390,6 +391,17 @@ private static Expr* pTerm(Parser p) pure @safe {
       auto result = new Expr(Zero());
       result.line = line; result.col = col; result.path = path;
       return result;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  if (p.consume(Token('('))) {
+    auto set = pSet(p);
+    if (set !is null && p.consume(Token(')'))) {
+      p.untrack;
+      return set;
     }
   }
 
