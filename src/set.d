@@ -7,11 +7,55 @@ import std.sumtype;
 
 const class Set {
   private struct Empty { };
+
   private struct Finite {
-    Set[] arr;
+    private Set[] arr; /+ Non-unique +/
+
     invariant { assert(arr.length > 0); }
+
     this(Set[] xs) pure nothrow @safe { arr = xs; }
-  };
+
+    string toString() pure nothrow @safe const {
+      string[] strings = arr.map!(x => x.toString).array;
+      string str = "{ " ~ strings[0];
+      foreach (s; strings[1..$]) {
+        str ~= ", " ~ s;
+      }
+      return str ~ " }";
+    }
+
+    bool containsMember(Set o) pure nothrow @safe const {
+      foreach (x; arr) {
+        if (o.equals(x)) return true;
+      }
+      return false;
+    }
+
+    bool subset(Set o) pure nothrow @safe const {
+      foreach (x; arr) {
+        if (!x.member(o)) return false;
+      }
+      return true;
+    }
+
+    Set setUnion() pure nothrow @safe const {
+      Set[] newArr = [];
+
+      foreach (elem; arr) {
+        elem.val.match!(
+          (Empty _) {},
+          (Finite fin) {
+            newArr ~= fin.arr;
+          }
+        );
+      }
+
+      if (newArr.length > 0)
+        return new Set(newArr);
+
+      return new Set;
+    }
+  }
 
   private alias Type = const SumType!(Empty, Finite);
   private Type val;
@@ -28,14 +72,7 @@ const class Set {
   override string toString() pure nothrow @safe const {
     return val.match!(
       (Empty _) => "0",
-      (Finite fin) {
-        string[] strings = fin.arr.map!(x => x.toString).array;
-        string finString = "{ " ~ strings[0];
-        foreach (s; strings[1..$]) {
-          finString ~= ", " ~ s;
-        }
-        return finString ~ " }";
-      }
+      (Finite fin) => fin.toString
     );
   }
 
@@ -46,12 +83,7 @@ const class Set {
   bool member(Set o) pure nothrow @safe const {
     return o.val.match!(
       (Empty _) => false,
-      (Finite oFin) {
-        foreach (x; oFin.arr) {
-          if (equals(x)) return true;
-        }
-        return false;
-      }
+      (Finite oFin) => oFin.containsMember(this)
     );
   }
 
@@ -61,12 +93,7 @@ const class Set {
       (Finite _) {
         return val.match!(
           (Empty _) => true,
-          (Finite fin) {
-            foreach (x; fin.arr) {
-              if (!x.member(o)) return false;
-            }
-            return true;
-          }
+          (Finite fin) => fin.subset(o)
         );
       }
     );
@@ -79,23 +106,7 @@ const class Set {
   Set setUnion() pure nothrow @safe const {
     return val.match!(
       (Empty _) => new Set,
-      (Finite fin) {
-        Set[] newArr = [];
-
-        foreach (elem; fin.arr) {
-          elem.val.match!(
-            (Empty _) {},
-            (Finite elemFin) {
-              newArr ~= elemFin.arr;
-            }
-          );
-        }
-
-        if (newArr.length > 0)
-          return new Set(newArr);
-
-        return new Set;
-      }
+      (Finite fin) => fin.setUnion
     );
   }
 }
