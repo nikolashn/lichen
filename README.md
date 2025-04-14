@@ -37,7 +37,9 @@ If `x`, `y` are sets, then `{ x }`, the set whose only element is `x`, and
 If `x` is a set, then `U x` is the set whose elements are exactly those that are
 members of some `z` which is an element of `x`.
 
-If `x` and `y` are sets, then `x U y` denotes `U{ x, y }`.
+If `x` and `y` are sets, then `x U y` is equal to `U{ x, y }`. For clarity and
+to enforce a preferred precedence, set expressions can be grouped with
+parentheses: for any set `x`, `(x)` is equal to `x`.
 
 ## Statements
 
