@@ -138,6 +138,17 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           auto set2 = (*v2).get!Set;
           return new Value(!set1.equals(set2));
 
+        case BinOp.Type.SUBSET:
+          if (!v1.isSet || !v2.isSet) {
+            throw new TokenException(
+              "Both sides of an subset test must be sets",
+              e.line, e.col, e.path);
+          }
+
+          auto set1 = (*v1).get!Set;
+          auto set2 = (*v2).get!Set;
+          return new Value(set1.subset(set2));
+
         case BinOp.Type.LAND:
           if (!v1.isBool || !v2.isBool) {
             throw new TokenException(

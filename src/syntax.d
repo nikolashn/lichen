@@ -60,6 +60,7 @@ struct BinOp {
     EQUALS,
     MEMBER,
     NEQUAL,
+    SUBSET,
     LAND,
     LOR
   }

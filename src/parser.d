@@ -14,7 +14,7 @@ import syntax;
    def -> identifier ":=" expr ";"
    expr -> pseudatom ("&" expr | "|" expr)?
    pseudatom -> atom | "~" pseudatom | "(" expr ")"
-   atom -> set ("=" set | "<" set | "/=" set)?
+   atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
    set -> term ("U" set)?
    term -> "0" | identifier | "U" term | "P" term | "{" (term ("," term)?)? "}" 
          | "(" set ")"
@@ -286,6 +286,17 @@ private static Expr* pAtom(Parser p) pure @safe {
 
       if (set1 !is null) {
         auto result = new Expr(BinOp(BinOp.Type.NEQUAL, set, set1));
+        result.line = line; result.col = col; result.path = path;
+
+        p.untrack;
+        return result;
+      }
+    }
+    else if (p.consume(Token(Token.Special.SUBSET))) {
+      auto set1 = pSet(p);
+
+      if (set1 !is null) {
+        auto result = new Expr(BinOp(BinOp.Type.SUBSET, set, set1));
         result.line = line; result.col = col; result.path = path;
 
         p.untrack;

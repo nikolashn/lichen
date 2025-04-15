@@ -11,7 +11,8 @@ struct Token {
   enum Special {
     NONE,
     DEFINE,
-    NEQUAL
+    NEQUAL,
+    SUBSET
   }
 
   alias TokenVal = SumType!(char, Special, string);
@@ -62,6 +63,7 @@ struct Token {
           case Special.NONE: return "[NONE]";
           case Special.DEFINE: return ":=";
           case Special.NEQUAL: return "/=";
+          case Special.SUBSET: return "sub";
           default: assert(false);
         }
       },
@@ -171,6 +173,9 @@ struct Lexer {
 
         if (name == "P")
           return Token('P');
+
+        if (name == "sub")
+          return Token(Token.Special.SUBSET);
 
         return Token(name);
     }

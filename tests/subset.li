@@ -1,0 +1,6 @@
+x := { 0, P 0 } U { P P 0 };
+y := { 0, P P 0 };
+
+~x sub y;
+y sub x;
+
