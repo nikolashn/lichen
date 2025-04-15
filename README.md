@@ -32,7 +32,7 @@ If `x`, `y` are sets, then `{ x }`, the set whose only element is `x`, and
 `{ x, y }`, whose only elements are `x` and `y`, are sets. For each set `x`,
 `{ x }` is equal to `{ x, x }`.
 
-### Union
+### Union and grouping
 
 If `x` is a set, then `U x` is the set whose elements are exactly those that are
 members of some `z` which is an element of `x`.
@@ -40,6 +40,12 @@ members of some `z` which is an element of `x`.
 If `x` and `y` are sets, then `x U y` is equal to `U{ x, y }`. For clarity and
 to enforce a preferred precedence, set expressions can be grouped with
 parentheses: for any set `x`, `(x)` is equal to `x`.
+
+### Subsets and powersets
+
+If `x`, `y` are sets, then `x sub y` if and only if each each element of `x` is
+an element of `y`, i.e. `x` is a subset of `y`. `P x` is the powerset of `x`:
+a set `z` is an element of `P x` if and only if `z` is a subset of `x`.
 
 ## Statements
 
