@@ -67,6 +67,13 @@ only if both `φ` and `ψ` are true) and `φ | ψ` (true if and only if at least
 of `φ` and `ψ` is true). Precedence can be ensured by using enclosing
 parentheses `(φ)`.
 
+There are also quantifier formulas. For a set `x`, assertion `φ`, `all a(x) φ`
+is true if and only if for each set `y` element of `x`, `φ` is true when each
+free instance of variable `a` are replaced with `y`. Similarly, `exist a(x) φ`
+is true if and only if there exists a set `y` element of `x` such that `φ` is
+true when each free instance of variable `a` is replaced with `y`. A variable
+`a` is free in `φ` if it is not enclosed with a quantifier in `φ`.
+
 ### Value statements
 
 A value statement is just a set by itself as a statement, i.e. `x;` for any set
