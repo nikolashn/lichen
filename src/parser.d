@@ -12,8 +12,9 @@ import syntax;
 
    program -> { expr ";" | def }
    def -> identifier ":=" expr ";"
-   expr -> pseudatom ("&" expr | "|" expr)?
+   expr -> pseudatom ("&" expr | "|" expr)? 
    pseudatom -> atom | "~" pseudatom | "(" expr ")"
+              | ("all" | "exist") identifier "(" set ")" expr
    atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
    set -> term ("U" set)?
    term -> "0" | identifier | "U" term | "P" term | "{" (term ("," term)?)? "}" 
@@ -306,6 +307,45 @@ private static Expr* pAtom(Parser p) pure @safe {
     else {
       p.untrack;
       return set;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  auto top = p.top;
+  if (p.consume(Token(Token.Special.FORALL)) ||
+      p.consume(Token(Token.Special.EXISTS)))
+  {
+    auto x = p.consumeIdentifier;
+    if (x !is null && p.consume(Token('('))) {
+      auto dom = pSet(p);
+
+      if (dom !is null && p.consume(Token(')'))) {
+        auto expr = pExpr(p);
+
+        if (expr !is null) {
+          Expr* result;
+          if (top == Token(Token.Special.FORALL)) {
+            result = new Expr(ForAll(Variable(x), dom, expr));
+          }
+          else if (top == Token(Token.Special.EXISTS)) {
+            /+  exist a(x) φ  <->  ~all a(x) ~φ  +/
+            result = new Expr(
+              UnOp(UnOp.Type.LNOT, new Expr(
+                ForAll(Variable(x), dom, new Expr(
+                  UnOp(UnOp.Type.LNOT, expr)
+                ))
+              ))
+            );
+          }
+          else assert(false);
+
+          result.line = line; result.col = col; result.path = path;
+          p.untrack;
+          return result;
+        }
+      }
     }
   }
 

@@ -1,0 +1,13 @@
+all x(0) x < x;
+~exist x({0}) x /= x;
+exist x({0}) x = 0;
+
+y := P(P(P(0)));
+all x(y) all z(x) z < y;
+
+mySet := { 0, {0, y} };
+0 < mySet & exist x(mySet) 0 < x;
+
+exist y(mySet) y < mySet;
+~exist y(y) P P 0 < y;
+

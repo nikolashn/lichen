@@ -24,7 +24,8 @@ struct Expr {
     BinOp,
     Variable,
     Single,
-    Pair
+    Pair,
+    ForAll
   );
   Type val;
   size_t line, col;
@@ -36,6 +37,7 @@ struct Expr {
   this(Variable x) pure nothrow @safe { val = x; }
   this(Single x) pure nothrow @safe { val = x; }
   this(Pair x) pure nothrow @safe { val = x; }
+  this(ForAll x) pure nothrow @safe { val = x; }
 }
 
 struct Zero { }
@@ -87,6 +89,15 @@ struct Pair {
   const Expr* member1, member2;
   this(Expr* e1, Expr* e2) pure nothrow @safe {
     member1 = e1; member2 = e2;
+  }
+}
+
+struct ForAll {
+  const Variable var;
+  const Expr* domain, formula;
+
+  this(Variable v, Expr* e1, Expr* e2) pure nothrow @safe {
+    var = v; domain = e1; formula = e2;
   }
 }
 

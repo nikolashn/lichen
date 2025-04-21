@@ -10,6 +10,8 @@ const class Set {
   private alias Type = const SumType!(Empty, Finite, PowerSet);
   private Type val;
 
+  private alias SatFunction = bool delegate(Set) pure @safe const;
+
   this() pure nothrow @safe const { val = Empty(); }
   this(Set s1) pure nothrow @safe const {
     val = Finite([s1]);
@@ -57,6 +59,14 @@ const class Set {
     return subset(o) && o.subset(this);
   }
 
+  bool forAll(SatFunction sat) pure @safe const {
+    return val.match!(
+      (Empty _) => true,
+      (Finite fin) => fin.forAll(sat),
+      (PowerSet pow) => pow.toFinite.forAll(sat) /+ Expensive! +/
+    );
+  }
+
   Set setUnion() pure nothrow @safe const {
     return val.match!(
       (Empty _) => new Set,
@@ -97,6 +107,13 @@ const class Set {
     bool subset(Set o) pure nothrow @safe const {
       foreach (x; arr) {
         if (!x.member(o)) return false;
+      }
+      return true;
+    }
+
+    bool forAll(SatFunction sat) pure @safe const {
+      foreach (elem; arr) {
+        if (!sat(elem)) return false;
       }
       return true;
     }

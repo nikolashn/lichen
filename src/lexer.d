@@ -12,7 +12,9 @@ struct Token {
     NONE,
     DEFINE,
     NEQUAL,
-    SUBSET
+    SUBSET,
+    FORALL,
+    EXISTS
   }
 
   alias TokenVal = SumType!(char, Special, string);
@@ -64,6 +66,8 @@ struct Token {
           case Special.DEFINE: return ":=";
           case Special.NEQUAL: return "/=";
           case Special.SUBSET: return "sub";
+          case Special.FORALL: return "all";
+          case Special.EXISTS: return "exist";
           default: assert(false);
         }
       },
@@ -176,6 +180,12 @@ struct Lexer {
 
         if (name == "sub")
           return Token(Token.Special.SUBSET);
+
+        if (name == "all")
+          return Token(Token.Special.FORALL);
+
+        if (name == "exist")
+          return Token(Token.Special.EXISTS);
 
         return Token(name);
     }

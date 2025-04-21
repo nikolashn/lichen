@@ -7,30 +7,7 @@ import lexer;
 import syntax;
 import parser;
 import set;
-
-alias Value = const SumType!(Set, bool);
-
-struct Env {
-  private Value*[string] entries;
-
-  Value* find(
-      const string x,
-      const size_t line,
-      const size_t col,
-      const string path = null)
-    pure @safe const
-  {
-    if (x !in entries) {
-      throw new TokenException("Used undefined identifier '" ~ x ~ "'",
-        line, col, path);
-    }
-    return entries[x];
-  }
-
-  void update(const string x, Value* v) pure nothrow @safe {
-    entries[x] = v;
-  }
-}
+import env;
 
 static void interpret(Stmt[] program) @safe {
   Env env;
@@ -53,7 +30,9 @@ static void interpret(Stmt[] program) @safe {
       },
       (Def* d) {
         (*d).match!(
-          (DefineVar dv) => env.update(dv.lhs, eval(dv.rhs, env))
+          (DefineVar dv) {
+            env = env.updated(dv.lhs, eval(dv.rhs, env));
+          }
         );
       }
     );
@@ -196,6 +175,20 @@ static Value* eval(const Expr* e, const Env env) pure @safe
       auto set1 = (*v1).get!Set;
       auto set2 = (*v2).get!Set;
       return new Value(new Set(set1, set2));
+    },
+    (ForAll q) {
+      auto v1 = eval(q.domain, env);
+
+      if (!v1.isSet)
+        throw new TokenException("Domain of a quantification must be a set",
+          e.line, e.col, e.path);
+
+      auto dom = (*v1).get!Set;
+      return new Value(dom.forAll(
+        (Set set) pure @safe const =>
+          (*eval(q.formula, env.updated(q.var.name, new Value(set))))
+          .get!(const bool)
+      ));
     }
   );
 }

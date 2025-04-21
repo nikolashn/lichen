@@ -3,7 +3,10 @@ P P 0 = {0, {0}};
 
 x := P P P P P P 0;
 x;
-U U U U U U x;
+
+y := U U U U U U x;
+y = 0;
+y;
 
 0 < (P 0) U {{0}};
 

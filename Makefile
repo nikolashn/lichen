@@ -8,8 +8,14 @@ all:
 debug:
 	${DC} -of=lichen ${D_FILES} ${DEBUG_FLAGS}
 
+tests:
+	for file in tests/* ; do \
+		echo "--- $$file ---" ; \
+		./lichen $$file ; \
+	done
+
 clean:
 	rm -f lichen *.o *.a
 
-.PHONY: all debug clean
+.PHONY: all debug tests clean
 
