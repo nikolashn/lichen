@@ -18,7 +18,7 @@ For sets `a`, `b`, formulae `φ`, `ψ`, identifier `x`:
 | `P a`     | $\mathcal P(a)$ |
 | `~ φ`     | $\lnot \varphi$ |
 | `φ & ψ`   | $\varphi \land \psi$ |
-| `φ | ψ`   | $\varphi \lor \psi$ |
+| `φ \| ψ`  | $\varphi \lor \psi$ |
 | `all x(a) φ` | $\forall x \in a. \varphi$ |
 | `exist x(a) φ` | $\forall x \in a. \varphi$ |
 
