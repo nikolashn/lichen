@@ -13,5 +13,5 @@ axiomatic set theory.
 
 ## Language manual
 
-[MANUAL.md](Here).
+[Here](MANUAL.md).
 
