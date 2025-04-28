@@ -5,10 +5,11 @@ Lichen is a language for exploring axiomatic set theory.
 ## Quick symbol reference
 
 | Lichen | Mathematical |
+|--------|--------------|
 | `<`    | $\in$        |
 | `=`    | $=$          |
 | `/=`   | $\neq$       |
-| `0`    | $\varempty$  |
+| `0`    | $\empty$     |
 | `U`    | $\bigcup$    |
 | `sub`  | $\subseteq$  |
 | `P`    | $\mathcal P$ |
