@@ -4,20 +4,23 @@ Lichen is a language for exploring axiomatic set theory.
 
 ## Quick symbol reference
 
-| Lichen | Mathematical |
-|--------|--------------|
-| `<`    | $\in$        |
-| `=`    | $=$          |
-| `/=`   | $\neq$       |
-| `0`    | $\varnothing$ |
-| `U`    | $\bigcup$    |
-| `sub`  | $\subseteq$  |
-| `P`    | $\mathcal P$ |
-| `~`    | $\lnot$      |
-| `&`    | $\land$      |
-| `|`    | $\lor$       |
-| `all x(y) φ` | $\forall x \in y. \varphi$ |
-| `exist x(y) φ` | $\forall x \in y. \varphi$ |
+For sets `a`, `b`, formulae `φ`, `ψ`, identifier `x`:
+
+| Lichen    | Mathematical    |
+|-----------|-----------------|
+| `a < b`   | $a \in b$       |
+| `a = b`   | $a = b$         |
+| `a /= b`  | $a \neq b$      |
+| `0`       | $\varnothing$   |
+| `U a`     | $\bigcup a$     |
+| `a U b`   | $a \cup b$      |
+| `a sub b` | $a \subseteq b$ |
+| `P a`     | $\mathcal P(a)$ |
+| `~ φ`     | $\lnot \varphi$ |
+| `φ & ψ`   | $\varphi \land \psi$ |
+| `φ | ψ`   | $\varphi \lor \psi$ |
+| `all x(a) φ` | $\forall x \in a. \varphi$ |
+| `exist x(a) φ` | $\forall x \in a. \varphi$ |
 
 ## Sets
 
