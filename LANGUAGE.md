@@ -2,6 +2,22 @@
 
 Lichen is a language for exploring axiomatic set theory.
 
+## Quick symbol reference
+
+| Lichen | Mathematical |
+| `<`    | $\in$        |
+| `=`    | $=$          |
+| `/=`   | $\neq$       |
+| `0`    | $\varempty$  |
+| `U`    | $\bigcup$    |
+| `sub`  | $\subseteq$  |
+| `P`    | $\mathcal P$ |
+| `~`    | $\lnot$      |
+| `&`    | $\land$      |
+| `|`    | $\lor$       |
+| `all x(y) φ` | $\forall x \in y. \varphi$ |
+| `exist x(y) φ` | $\forall x \in y. \varphi$ |
+
 ## Sets
 
 Lichen has values called sets.
