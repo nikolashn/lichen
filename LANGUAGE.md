@@ -20,7 +20,7 @@ For sets `a`, `b`, formulae `φ`, `ψ`, identifier `x`:
 | `φ & ψ`   | $\varphi \land \psi$ |
 | `φ \| ψ`  | $\varphi \lor \psi$ |
 | `all x(a) φ` | $\forall x \in a. \varphi$ |
-| `exist x(a) φ` | $\forall x \in a. \varphi$ |
+| `exist x(a) φ` | $\exists x \in a. \varphi$ |
 
 ## Sets
 
