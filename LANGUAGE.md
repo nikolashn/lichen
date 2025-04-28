@@ -9,7 +9,7 @@ Lichen is a language for exploring axiomatic set theory.
 | `<`    | $\in$        |
 | `=`    | $=$          |
 | `/=`   | $\neq$       |
-| `0`    | $\empty$     |
+| `0`    | $\varnothing$ |
 | `U`    | $\bigcup$    |
 | `sub`  | $\subseteq$  |
 | `P`    | $\mathcal P$ |
