@@ -8,6 +8,7 @@ import syntax;
 import parser;
 import set;
 import env;
+import formula;
 
 static void interpret(Stmt[] program) @safe {
   Env env;
@@ -184,12 +185,19 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           e.line, e.col, e.path);
 
       auto dom = (*v1).get!Set;
-      return new Value(dom.forAll(
-        (Set set) pure @safe const =>
-          (*eval(q.formula, env.updated(q.var.name, new Value(set))))
-          .get!(const bool)
-      ));
-    }
+      return new Value(dom.forAll(q.var, Formula(q.formula, env)));
+    },
+    (Specific s) {
+      auto v1 = eval(s.domain, env);
+
+      if (!v1.isSet)
+        throw new TokenException("Domain of a specification must be a set",
+          e.line, e.col, e.path);
+
+      auto dom = (*v1).get!Set;
+      return new Value(new Set(dom, s.var, Formula(s.formula, env)));
+    },
+    (Set s) => new Value(s)
   );
 }
 

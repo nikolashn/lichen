@@ -3,6 +3,9 @@ module syntax;
 import std.sumtype;
 import std.typecons;
 
+import set;
+import formula;
+
 /+ Statements +/
 
 struct Stmt {
@@ -25,7 +28,9 @@ struct Expr {
     Variable,
     Single,
     Pair,
-    ForAll
+    ForAll,
+    Specific,
+    Set
   );
   Type val;
   size_t line, col;
@@ -38,6 +43,86 @@ struct Expr {
   this(Single x) pure nothrow @safe { val = x; }
   this(Pair x) pure nothrow @safe { val = x; }
   this(ForAll x) pure nothrow @safe { val = x; }
+  this(Specific x) pure nothrow @safe { val = x; }
+  this(Set x) pure nothrow @safe { val = x; }
+  this(Type x) pure nothrow @safe { val = x; }
+
+  string toString() pure nothrow @safe const {
+    return val.match!(
+      (Zero _) => "0",
+      (UnOp x) {
+        immutable s = x.post.toString;
+        switch (x.type) {
+          case UnOp.Type.LNOT: 
+            return "~" ~ s;
+          case UnOp.Type.UNION:
+            return "U" ~ s;
+          case UnOp.Type.POWERSET:
+            return "P(" ~ s ~ ")";
+          default: assert(false);
+        }
+      },
+      (BinOp x) {
+        immutable l = x.lhs.toString, r = x.rhs.toString;
+        switch (x.type) {
+          case BinOp.Type.EQUALS: 
+            return l ~ " = " ~ r;
+          case BinOp.Type.MEMBER:
+            return l ~ " < " ~ r;
+          case BinOp.Type.NEQUAL:
+            return l ~ " /= " ~ r;
+          case BinOp.Type.SUBSET:
+            return l ~ " sub " ~ r;
+          case BinOp.Type.LAND:
+            return "(" ~ l ~ " & " ~ r ~ ")";
+          case BinOp.Type.LOR:
+            return "(" ~ l ~ " | " ~ r ~ ")";
+          default: assert(false);
+        }
+      },
+      (Variable x) => x.name,
+      (Single x) => "{" ~ x.member.toString ~ "}",
+      (Pair x) => "{" ~ x.member1.toString ~ ", " ~ x.member2.toString ~ "}",
+      (ForAll x) => "all " ~ x.var.name ~ 
+        "(" ~ x.domain.toString ~ ") " ~ x.formula.toString,
+      (Specific x) => "{" ~ x.var.name ~ " < " ~ 
+        x.domain.toString ~ " : " ~ x.formula.toString ~ "}",
+      (Set x) => x.toString
+    );
+  }
+
+  const Expr* rename(const Variable oldVar, const Variable newVar) 
+    pure nothrow @safe 
+  {
+    return val.match!(
+      (UnOp x) {
+        switch (x.type) {
+          case UnOp.Type.LNOT, UnOp.Type.UNION, UnOp.Type.POWERSET:
+          {
+            return new Expr(UnOp(x.type, x.post.rename(oldVar, newVar)));
+          }
+          default: assert(false);
+        }
+      },
+      (BinOp x) {
+        switch (x.type) {
+          case BinOp.Type.EQUALS, BinOp.Type.MEMBER, BinOp.Type.NEQUAL,
+               BinOp.Type.SUBSET, BinOp.Type.LAND, BinOp.Type.LOR:
+          {
+            return new Expr(BinOp(x.type, 
+              x.lhs.rename(oldVar, newVar), x.rhs.rename(oldVar, newVar)));
+          }
+          default: assert(false);
+        }
+      },
+      (Variable x) => 
+        (x.name == oldVar.name) ? new Expr(newVar) : new Expr(x),
+      (Single x) => new Expr(Single(x.member.rename(oldVar, newVar))),
+      (Pair x) => new Expr(Pair(x.member1.rename(oldVar, newVar),
+                                x.member2.rename(oldVar, newVar))),
+      _ => new Expr(val)
+    );
+  }
 }
 
 struct Zero { }
@@ -52,7 +137,7 @@ struct UnOp {
   const Type type;
   const Expr* post;
 
-  this(Type t, Expr* e1) pure nothrow @safe {
+  this(const Type t, const Expr* e1) pure nothrow @safe {
     type = t; post = e1;
   }
 }
@@ -70,9 +155,18 @@ struct BinOp {
   const Type type;
   const Expr* lhs, rhs;
 
-  this(Type t, Expr* e1, Expr* e2) pure nothrow @safe {
+  this(const Type t, const Expr* e1, const Expr* e2) pure nothrow @safe {
     type = t; lhs = e1; rhs = e2;
   }
+}
+
+static Expr* makeImpliesExpr(const Expr* e1, const Expr* e2) 
+  pure nothrow @safe
+{
+  return new Expr(BinOp(BinOp.Type.LOR,
+    new Expr(UnOp(UnOp.Type.LNOT, e1)),
+    e2
+  ));
 }
 
 struct Variable {
@@ -82,12 +176,12 @@ struct Variable {
 
 struct Single {
   const Expr* member;
-  this(Expr* e1) pure nothrow @safe { member = e1; }
+  this(const Expr* e1) pure nothrow @safe { member = e1; }
 }
 
 struct Pair {
   const Expr* member1, member2;
-  this(Expr* e1, Expr* e2) pure nothrow @safe {
+  this(const Expr* e1, const Expr* e2) pure nothrow @safe {
     member1 = e1; member2 = e2;
   }
 }
@@ -96,7 +190,30 @@ struct ForAll {
   const Variable var;
   const Expr* domain, formula;
 
-  this(Variable v, Expr* e1, Expr* e2) pure nothrow @safe {
+  this(const Variable v, const Expr* e1, const Expr* e2) pure nothrow @safe {
+    var = v; domain = e1; formula = e2;
+  }
+}
+
+static Expr* makeExistsExpr(
+    const Variable var, 
+    const Expr* domain, 
+    const Expr* formula
+  ) 
+  pure nothrow @safe
+{
+  return new Expr(UnOp(UnOp.Type.LNOT,
+    new Expr(ForAll(var, domain,
+      new Expr(UnOp(UnOp.Type.LNOT, formula))
+    ))
+  ));
+}
+
+struct Specific {
+  const Variable var;
+  const Expr* domain, formula;
+
+  this(const Variable v, const Expr* e1, const Expr* e2) pure nothrow @safe {
     var = v; domain = e1; formula = e2;
   }
 }

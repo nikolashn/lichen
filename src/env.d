@@ -13,14 +13,14 @@ struct Env {
 
   private this(RedBlack rb) pure nothrow @safe { entries = rb; }
 
-  Value* find(
+  const(Value)* find(
       const string x,
       const size_t line,
       const size_t col,
       const string path = null)
     pure @safe const
   {
-    auto value = entries is null ? null : entries.find(x);
+    auto value = maybeFind(x);
     if (value is null) {
       throw new TokenException("Used undefined identifier '" ~ x ~ "'",
         line, col, path);
@@ -28,7 +28,11 @@ struct Env {
     return value;
   }
 
-  Env updated(const string x, Value* v) pure nothrow @safe const {
+  const(Value)* maybeFind(const string x) pure nothrow @safe const {
+    return entries is null ? null : entries.find(x);
+  }
+
+  Env updated(const string x, const Value* v) pure nothrow @safe const {
     return Env(entries is null ? new RedBlack(x, v) : entries.updated(x, v));
   }
 }

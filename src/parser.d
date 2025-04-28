@@ -17,7 +17,9 @@ import syntax;
               | ("all" | "exist") identifier "(" set ")" expr
    atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
    set -> term ("U" set)?
-   term -> "0" | identifier | "U" term | "P" term | "{" (term ("," term)?)? "}" 
+   term -> "0" | identifier | "U" term | "P" term 
+         | "{" (term ("," term)?)? "}" 
+         | "{" identifier "<" set ":" expr "}"
          | "(" set ")"
  +/
 
@@ -455,7 +457,29 @@ private static Expr* pTerm(Parser p) pure @safe {
     else if (p.consume(Token('}'))) {
       auto result = new Expr(Zero());
       result.line = line; result.col = col; result.path = path;
+
+      p.untrack;
       return result;
+    }
+  }
+
+  p.backtrack;
+
+  p.track;
+  if (p.consume(Token('{'))) {
+    auto y = p.consumeIdentifier;
+    if (y !is null && p.consume(Token('<'))) {
+      auto set = pSet(p);
+      if (set !is null && p.consume(Token(':'))) {
+        auto expr = pExpr(p);
+        if (expr !is null && p.consume(Token('}'))) {
+          auto result = new Expr(Specific(Variable(y), set, expr));
+          result.line = line; result.col = col; result.path = path;
+
+          p.untrack;
+          return result;
+        }
+      }
     }
   }
 

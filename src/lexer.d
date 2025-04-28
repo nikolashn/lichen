@@ -137,7 +137,7 @@ struct Lexer {
 
   private static bool canIdentifier(const char c) pure nothrow @safe {
     switch (c) {
-      case ':', '/', '=', '<', '0', ';', ',', '{', '}', '~', '|', '&', '(', ')',
+      case ':', '/', '=', '<', '$', ';', ',', '{', '}', '~', '|', '&', '(', ')',
            '\n', ' ', '\t':
       {
         return false;
@@ -151,7 +151,7 @@ struct Lexer {
     auto c = next;
     switch (c) {
       case ':':
-        return match('=') ? Token(Token.Special.DEFINE) : Token('=');
+        return match('=') ? Token(Token.Special.DEFINE) : Token(':');
 
       case '/':
         return match('=') ? Token(Token.Special.NEQUAL) : Token('/');

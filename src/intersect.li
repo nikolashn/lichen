@@ -1,0 +1,7 @@
+a := {0, P 0} U {P P 0};
+b := {P 0, P P 0};
+c := {P P 0, P P P 0};
+X := {a} U {b} U {c};
+Cap_X := {x < U X: all y(X) x < y};
+Cap_X = { P P 0 };
+
