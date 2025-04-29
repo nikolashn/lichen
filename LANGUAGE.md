@@ -23,6 +23,11 @@ For sets `a`, `b`, formulae `φ`, `ψ`, identifier `x`:
 | `exist x(a) φ` | $\exists x \in a. \varphi$ |
 | `{x < a : φ}` | $\{ x \in a : \varphi \}$ |
 
+## Comments
+
+Comments don't mean anything. Any string between `/+` and `+/` is a comment.
+Comments can be nested.
+
 ## Sets
 
 Lichen has values called sets.
