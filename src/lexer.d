@@ -146,13 +146,33 @@ struct Lexer {
   }
 
   private Token getToken() pure nothrow @safe {
+    if (done)
+      return Token(Token.Special.NONE);
+
     auto c = next;
     switch (c) {
       case ':':
         return match('=') ? Token(Token.Special.DEFINE) : Token(':');
 
       case '/':
-        return match('=') ? Token(Token.Special.NEQUAL) : Token('/');
+        if (match('=')) {
+          return Token(Token.Special.NEQUAL);
+        }
+        else if (match('+')) {
+          size_t depth = 1;
+          while (!done && depth > 0) {
+            if (match('/') && match('+'))
+              depth += 1;
+            else if (match('+') && match('/'))
+              depth -= 1;
+            else
+              next;
+          }
+          return getToken;
+        }
+        else {
+          return Token('/');
+        }
 
       case '=', '<', '0', ';', ',', '{', '}', '~', '|', '&', '(', ')':
         return Token(c);
