@@ -21,6 +21,7 @@ For sets `a`, `b`, formulae `φ`, `ψ`, identifier `x`:
 | `φ \| ψ`  | $\varphi \lor \psi$ |
 | `all x(a) φ` | $\forall x \in a. \varphi$ |
 | `exist x(a) φ` | $\exists x \in a. \varphi$ |
+| `{x < a : φ}` | $\{ x \in a : \varphi \}$ |
 
 ## Sets
 
@@ -61,6 +62,12 @@ parentheses: for any set `x`, `(x)` is equal to `x`.
 If `x`, `y` are sets, then `x sub y` if and only if each each element of `x` is
 an element of `y`, i.e. `x` is a subset of `y`. `P x` is the powerset of `x`:
 a set `z` is an element of `P x` if and only if `z` is a subset of `x`.
+
+### Specification
+
+If `x` is an identifier, `a` a set, `φ` a formula, `{x < a : φ}` whose elements
+are precisely those `b` elements of `x` such that `φ` is true when its free
+instances of `x` are replaced with `b`.
 
 ## Statements
 
