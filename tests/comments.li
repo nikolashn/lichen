@@ -1,7 +1,16 @@
 /+ This is a comment. +/
 0 = 0;
+/+/++/
+/+
+  /+ +/
+  /+ +/ +/ /+
++/
++/
+0 = 0;
 /+ 0 /= 0; +/
 {0};
+/+/++/+/
+0;
 /+ more comments
   /+ nested comment
     /+ even more nesting +/
