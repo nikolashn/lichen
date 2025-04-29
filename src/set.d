@@ -1,9 +1,8 @@
 module set;
 
-import std.algorithm;
-import std.array;
-import std.range;
-import std.conv;
+import std.algorithm : all, any, filter, map, max;
+import std.array : array;
+import std.range : iota;
 import std.sumtype;
 
 import env;
@@ -158,7 +157,11 @@ const class Set {
     );
   }
 
-  Set toFinite() pure @safe const
+  static Set makePowerSet(Set x) pure nothrow @safe {
+    return new Set(MultiPow([x]));
+  }
+
+  private Set toFinite() pure @safe const
     out (s; s.val.has!Empty || s.val.has!Finite)
   {
     /+ TODO: check for finiteness +/
@@ -216,10 +219,6 @@ const class Set {
         _ => assert(false)
       )
     );
-  }
-
-  static Set makePowerSet(Set x) pure nothrow @safe {
-    return new Set(MultiPow([x]));
   }
 }
 

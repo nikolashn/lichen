@@ -1,6 +1,5 @@
 module env;
 
-import std.stdio;
 import std.sumtype;
 
 import lexer;

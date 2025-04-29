@@ -1,9 +1,8 @@
 module parser;
 
-import std.array;
+import std.array : back, popBack;
+//import std.stdio : writeln;
 import std.sumtype;
-
-import std.stdio; /+ For debugging +/
 
 import lexer;
 import syntax;
@@ -18,7 +17,7 @@ import syntax;
    atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
    set -> term ("U" set)?
    term -> "0" | identifier | "U" term | "P" term 
-         | "{" (term ("," term)?)? "}" 
+         | "{" (term { "," term })? "}" 
          | "{" identifier "<" set ":" expr "}"
          | "(" set ")"
  +/
@@ -59,7 +58,7 @@ private class Parser {
     throwIfDone;
 
     if (token == tokens[index]) {
-      debug writeln("Consumed ", token, " at index ", index);
+      //debug writeln("Consumed ", token, " at index ", index);
       index += 1;
       return true;
     }
@@ -72,7 +71,7 @@ private class Parser {
     auto x = tokens[index].getIdentifier;
 
     if (x !is null) {
-      debug writeln("Consumed identifier ", x, " at index ", index);
+      //debug writeln("Consumed identifier ", x, " at index ", index);
       index += 1;
       return x;
     }
@@ -103,7 +102,7 @@ private class Parser {
   {
     index = tracks.back;
     tracks.popBack;
-    debug writeln("Backtracked to index ", index);
+    //debug writeln("Backtracked to index ", index);
   }
 }
 
@@ -148,7 +147,7 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
       "Invalid syntax", p.top.line, p.top.col, p.top.path);
   }
 
-  debug writeln("Finished parsing");
+  //debug writeln("Finished parsing");
   return program;
 }
 
@@ -369,7 +368,7 @@ private static Expr* pSet(Parser p) pure @safe {
       
       if (set !is null) {
         auto result =
-          new Expr(UnOp(UnOp.Type.UNION, new Expr(Pair(term, set))));
+          new Expr(UnOp(UnOp.Type.UNION, new Expr(Finite([term, set]))));
         result.line = line; result.col = col; result.path = path;
 
         p.untrack;
@@ -436,18 +435,15 @@ private static Expr* pTerm(Parser p) pure @safe {
   if (p.consume(Token('{'))) {
     auto term = pTerm(p);
     if (term !is null) {
-      if (p.consume(Token(','))) {
-        auto term1 = pTerm(p);
-        if (term1 !is null && p.consume(Token('}'))) {
-          auto result = new Expr(Pair(term, term1));
-          result.line = line; result.col = col; result.path = path;
-
-          p.untrack;
-          return result;
-        }
+      Expr*[] terms = [ term ];
+      while (p.consume(Token(','))) {
+        term = pTerm(p);
+        if (term is null)
+          break;
+        terms ~= term;
       }
-      else if (p.consume(Token('}'))) {
-        auto result = new Expr(Single(term));
+      if (term !is null && p.consume(Token('}'))) {
+        auto result = new Expr(Finite(terms));
         result.line = line; result.col = col; result.path = path;
 
         p.untrack;

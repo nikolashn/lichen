@@ -1,6 +1,8 @@
 module interpreter;
 
-import std.stdio;
+import std.array : array;
+import std.algorithm : all, map;
+import std.stdio : writeln;
 import std.sumtype;
 
 import lexer;
@@ -155,27 +157,15 @@ static Value* eval(const Expr* e, const Env env) pure @safe
       }
     },
     (Variable var) => env.find(var.name, e.line, e.col, e.path),
-    (Single s) {
-      auto v = eval(s.member, env);
+    (Finite s) {
+      auto vs = s.members.map!(e1 => eval(e1, env));
 
-      if (!v.isSet)
+      if (!vs.all!isSet)
         throw new TokenException("Sets may only contain other sets",
           e.line, e.col, e.path);
 
-      auto set = (*v).get!Set;
-      return new Value(new Set(set));
-    },
-    (Pair s) {
-      auto v1 = eval(s.member1, env);
-      auto v2 = eval(s.member2, env);
-
-      if (!v1.isSet || !v2.isSet)
-        throw new TokenException("Sets may only contain other sets",
-          e.line, e.col, e.path);
-
-      auto set1 = (*v1).get!Set;
-      auto set2 = (*v2).get!Set;
-      return new Value(new Set(set1, set2));
+      auto sets = vs.map!(v => (*v).get!Set).array;
+      return new Value(new Set(sets));
     },
     (ForAll q) {
       auto v1 = eval(q.domain, env);

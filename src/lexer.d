@@ -1,11 +1,9 @@
 module lexer;
 
-import std.conv;
-import std.exception;
-import std.file;
-import std.stdio;
+import std.conv : to;
+import std.file : readText;
+//import std.stdio : writeln;
 import std.sumtype;
-import std.typecons;
 
 struct Token {
   enum Special {
@@ -202,7 +200,7 @@ static immutable(Token)[] tokenizeFileAt(const string path) {
     throw new Exception("Could not read file at path '" ~ path ~ "'");
   }
   
-  debug lexer.tokens.writeln;
+  //debug lexer.tokens.writeln;
   return lexer.tokens;
 }
 

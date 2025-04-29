@@ -1,8 +1,11 @@
 module syntax;
 
+import std.algorithm : map;
+import std.array : array;
 import std.sumtype;
-import std.typecons;
+import std.typecons : Tuple;
 
+import foldconst;
 import set;
 import formula;
 
@@ -26,8 +29,7 @@ struct Expr {
     UnOp,
     BinOp,
     Variable,
-    Single,
-    Pair,
+    Finite,
     ForAll,
     Specific,
     Set
@@ -40,8 +42,7 @@ struct Expr {
   this(UnOp x) pure nothrow @safe { val = x; }
   this(BinOp x) pure nothrow @safe { val = x; }
   this(Variable x) pure nothrow @safe { val = x; }
-  this(Single x) pure nothrow @safe { val = x; }
-  this(Pair x) pure nothrow @safe { val = x; }
+  this(Finite x) pure nothrow @safe { val = x; }
   this(ForAll x) pure nothrow @safe { val = x; }
   this(Specific x) pure nothrow @safe { val = x; }
   this(Set x) pure nothrow @safe { val = x; }
@@ -81,8 +82,9 @@ struct Expr {
         }
       },
       (Variable x) => x.name,
-      (Single x) => "{" ~ x.member.toString ~ "}",
-      (Pair x) => "{" ~ x.member1.toString ~ ", " ~ x.member2.toString ~ "}",
+      (Finite x) => "{" ~ x.members.map!(e => e.toString).array.foldl1!(
+          (str, e) => str ~ ", " ~ e
+        ) ~ "}",
       (ForAll x) => "all " ~ x.var.name ~ 
         "(" ~ x.domain.toString ~ ") " ~ x.formula.toString,
       (Specific x) => "{" ~ x.var.name ~ " < " ~ 
@@ -117,9 +119,9 @@ struct Expr {
       },
       (Variable x) => 
         (x.name == oldVar.name) ? new Expr(newVar) : new Expr(x),
-      (Single x) => new Expr(Single(x.member.rename(oldVar, newVar))),
-      (Pair x) => new Expr(Pair(x.member1.rename(oldVar, newVar),
-                                x.member2.rename(oldVar, newVar))),
+      (Finite x) => new Expr(Finite(
+        x.members.map!(e => e.rename(oldVar, newVar)).array
+      )),
       _ => new Expr(val)
     );
   }
@@ -174,15 +176,12 @@ struct Variable {
   this(string x) pure nothrow @safe { name = x; }
 }
 
-struct Single {
-  const Expr* member;
-  this(const Expr* e1) pure nothrow @safe { member = e1; }
-}
-
-struct Pair {
-  const Expr* member1, member2;
-  this(const Expr* e1, const Expr* e2) pure nothrow @safe {
-    member1 = e1; member2 = e2;
+struct Finite {
+  const Expr*[] members;
+  this(const Expr*[] es) pure nothrow @safe
+    in (es.length > 0)
+  {
+    members = es;
   }
 }
 

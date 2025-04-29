@@ -1,6 +1,6 @@
 module formula;
 
-import std.conv;
+import std.conv : to;
 import std.sumtype;
 
 import syntax;

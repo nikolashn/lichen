@@ -1,0 +1,8 @@
+zéro := 0;
+un := {zéro};
+deux := {zéro, un};
+trois := {zéro, un, deux};
+quatre := {zéro, un, deux, trois};
+
+quatre = trois U {trois};
+
