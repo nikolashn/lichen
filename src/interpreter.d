@@ -76,7 +76,7 @@ static Value* eval(const Expr* e, const Env env) pure @safe
           }
 
           auto s1 = (*v1).get!(const Set);
-          return new Value(Set.powerSet(s1));
+          return new Value(Set.makePowerSet(s1));
           
         default: assert(false);
       }
