@@ -1,0 +1,34 @@
+--- tests/badsyntax.li ---
+Error at path 'tests/badsyntax.li' on line 1:1: Invalid syntax
+--- tests/comments.li ---
+{0}
+0
+--- tests/finite.li ---
+--- tests/intersect.li ---
+--- tests/logic.li ---
+--- tests/memberofempty.li ---
+Assertion failed at path 'tests/memberofempty.li' on line 1:1
+--- tests/nosemi.li ---
+Error at path 'tests/nosemi.li': Unexpected end of input
+--- tests/power.li ---
+P(P(P(P(P(P(0))))))
+0
+--- tests/quantifier.li ---
+--- tests/scope.li ---
+{x < P(0) : x = a}
+--- tests/singlepair.li ---
+{0}
+{{0}, {0}}
+{{0}, 0}
+--- tests/subset.li ---
+--- tests/three.li ---
+{0, {0}, {0, {0}}}
+--- tests/undefined.li ---
+Error at path 'tests/undefined.li' on line 1:1: Used undefined identifier 'x'
+--- tests/union.li ---
+--- tests/vars.li ---
+0
+{0}
+{{0}}
+--- tests/zero.li ---
+0

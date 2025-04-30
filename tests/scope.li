@@ -1,0 +1,17 @@
+a := 0;
+b := {x < P 0 : x = a};
+/+ b = {x < P 0 : x = 0} = {0} +/
+
+b; /+ showing b saved as a spec set +/
+
+b = {0};
+a := P 0;
+b = {0};
+a = {0};
+b sub a;
+
+c := {x < { P 0 } : 0 = 0};
+
+all a(c) b = {0};
+all a(c) a = P 0;
+
