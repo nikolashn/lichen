@@ -1,0 +1,11 @@
+pattern ⋂(a) := {x < U a : all y(a) x < y};
+⋂({P 0, P P 0, P P P 0}) = {0};
+
+pattern both(a, b) := ⋂({a, b});
+both({0, {0}}, {0, {0}, {{0}}}) = {0, {0}};
+
+pattern without(a, b) := {x < a : ~x < b};
+without(P 0, 0) = P 0;
+without(P 0, {0}) = 0;
+without({ 0, {0} }, { 0 }) = {{0}};
+
