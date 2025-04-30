@@ -13,9 +13,8 @@ tests:
 	for file in tests/*.li ; do \
 		echo "--- $$file ---" ; \
 		./lichen $$file ; \
-	done > .make_tests_output 2>&1 \
-	&& git diff --no-index tests/output .make_tests_output
-	rm -f .make_tests_output
+	done > .make_tests_output 2>&1
+	git diff --no-index tests/output .make_tests_output; rm -f .make_tests_output
 
 savetests:
 	for file in tests/*.li ; do \

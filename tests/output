@@ -10,6 +10,12 @@ Error at path 'tests/badsyntax.li' on line 1:1: Invalid syntax
 Assertion failed at path 'tests/memberofempty.li' on line 1:1
 --- tests/nosemi.li ---
 Error at path 'tests/nosemi.li': Unexpected end of input
+--- tests/pattern.li ---
+0
+{0}
+{0, {0}}
+{0, {0}, {0, {0}}}
+{0, {0}, {0, {0}}, {0, {0}, {0, {0}}}}
 --- tests/power.li ---
 P(P(P(P(P(P(0))))))
 0
