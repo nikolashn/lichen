@@ -1,0 +1,4 @@
+pattern single(x) := {x};
+
+single(0 = 0);
+
