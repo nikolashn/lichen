@@ -2,6 +2,7 @@
 Error at path 'tests/badpattern.li' on line 1:22: Sets may only contain other sets
 --- tests/badsyntax.li ---
 Error at path 'tests/badsyntax.li' on line 1:1: Invalid syntax
+--- tests/cartesian.li ---
 --- tests/comments.li ---
 {0}
 0
