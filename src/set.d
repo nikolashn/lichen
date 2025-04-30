@@ -5,10 +5,10 @@ import std.array : array;
 import std.range : iota;
 import std.sumtype;
 
+import fold;
 import env;
 import formula;
 import syntax;
-import foldconst;
 
 const class Set {
   private alias Type = const SumType!(Empty, Finite, MultiPow, SpecSet);
@@ -272,11 +272,7 @@ private const struct MultiPow {
   this(Set[] xs) pure nothrow @safe { domains = xs; }
 
   string toString() pure nothrow @safe const {
-    string str = "P(" ~ domains[0].toString ~ ")";
-    foreach (dom; domains[1..$]) {
-      str ~= " U P(" ~ dom.toString ~ ")";
-    }
-    return str;
+    return "P(" ~ domains.map!(d => d.toString).array.strJoin(") U P(") ~ ")";
   }
 }
 

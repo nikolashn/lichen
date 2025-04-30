@@ -4,8 +4,9 @@ import std.sumtype;
 
 import lexer;
 import set;
+import pattern;
 
-alias Value = const SumType!(Set, bool);
+alias Value = const SumType!(Set, bool, Pattern);
 
 struct Env {
   private RedBlack entries;

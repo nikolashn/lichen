@@ -5,7 +5,7 @@ import std.array : array;
 import std.sumtype;
 import std.typecons : Tuple;
 
-import foldconst;
+import fold;
 import set;
 import formula;
 
@@ -32,6 +32,7 @@ struct Expr {
     Finite,
     ForAll,
     Specific,
+    Call,
     Set
   );
   Type val;
@@ -45,6 +46,7 @@ struct Expr {
   this(Finite x) pure nothrow @safe { val = x; }
   this(ForAll x) pure nothrow @safe { val = x; }
   this(Specific x) pure nothrow @safe { val = x; }
+  this(Call x) pure nothrow @safe { val = x; }
   this(Set x) pure nothrow @safe { val = x; }
   this(Type x) pure nothrow @safe { val = x; }
 
@@ -82,13 +84,14 @@ struct Expr {
         }
       },
       (Variable x) => x.name,
-      (Finite x) => "{" ~ x.members.map!(e => e.toString).array.foldl1!(
-          (str, e) => str ~ ", " ~ e
-        ) ~ "}",
+      (Finite x) => 
+        "{" ~ x.members.map!(e => e.toString).array.strJoin(", ") ~ "}",
       (ForAll x) => "all " ~ x.var.name ~ 
         "(" ~ x.domain.toString ~ ") " ~ x.formula.toString,
       (Specific x) => "{" ~ x.var.name ~ " < " ~ 
         x.domain.toString ~ " : " ~ x.formula.toString ~ "}",
+      (Call x) => x.callee.toString ~ "(" ~ 
+        x.args.map!(e => e.toString).array.strJoin(", ") ~ ")",
       (Set x) => x.toString
     );
   }
@@ -217,11 +220,22 @@ struct Specific {
   }
 }
 
+struct Call {
+  const Expr* callee;
+  const Expr*[] args;
+
+  this(const Expr* e1, const Expr*[] es) pure nothrow @safe {
+    callee = e1; args = es;
+  }
+}
+
 /+ Definitions +/
 
 alias Def = SumType!(
-  DefineVar
+  DefineVar,
+  DefinePattern
 );
 
-alias DefineVar = Tuple!(string, "lhs", Expr*, "rhs");
+alias DefineVar = Tuple!(string, "name", Expr*, "rhs");
+alias DefinePattern = Tuple!(string, "name", string[], "params", Expr*, "rhs");
 

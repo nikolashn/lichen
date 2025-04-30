@@ -1,0 +1,18 @@
+pattern zero := 0;
+pattern true() := 0 = 0;
+pattern s(x) := x U {x};
+
+all x(zero) ~true();
+true;
+
+zero;
+s(zero);
+s(s(zero));
+s(s(s(zero)));
+s(s(s(s(zero))));
+
+pattern strictSub(x, y) := x sub y & x /= y;
+
+0 sub 0;
+~strictSub(0, 0);
+

@@ -1,16 +1,18 @@
 module interpreter;
 
-import std.array : array;
 import std.algorithm : all, map;
+import std.array : array;
+import std.conv : to;
 import std.stdio : writeln;
 import std.sumtype;
 
-import lexer;
+import lexer : TokenException;
 import syntax;
 import parser;
 import set;
 import env;
 import formula;
+import pattern;
 
 static void interpret(Stmt[] program) @safe {
   Env env;
@@ -18,23 +20,20 @@ static void interpret(Stmt[] program) @safe {
   foreach (stmt; program) {
     stmt.val.match!(
       (Expr* e) {
-        auto v = *eval(e, env);
-        v.match!(
-          (Set s) => s.writeln,
-          (bool b) {
-            if (!b) {
-              stmt.path is null
-                ? writeln("Assertion failed on line ", stmt.line, ":", stmt.col)
-                : writeln("Assertion failed at path '", stmt.path, "' on line ",
-                    stmt.line, ":", stmt.col);
-            }
-          }
-        );
+        eval(e, env).interpretValue(stmt);
       },
       (Def* d) {
         (*d).match!(
           (DefineVar dv) {
-            env = env.updated(dv.lhs, eval(dv.rhs, env));
+            env = env.updated(dv.name, eval(dv.rhs, env));
+          },
+          (DefinePattern dp) {
+            env = env.updated(
+              dp.name,
+              new Value(
+                Pattern(dp.params, dp.rhs, env, stmt.line, stmt.col, stmt.path)
+              )
+            );
           }
         );
       }
@@ -42,7 +41,23 @@ static void interpret(Stmt[] program) @safe {
   }
 }
 
-static Value* eval(const Expr* e, const Env env) pure @safe
+static void interpretValue(const Value* v, Stmt stmt) @safe {
+  (*v).match!(
+    (Set s) => s.writeln,
+    (bool b) {
+      if (!b) {
+        stmt.path is null
+          ? writeln("Assertion failed on line ", stmt.line, ":", stmt.col)
+          : writeln("Assertion failed at path '", stmt.path, "' on line ",
+              stmt.line, ":", stmt.col);
+      }
+    },
+    (Pattern p) => p.call([]).interpretValue(stmt)
+  );
+}
+
+static Value* eval(const Expr* e, const Env env, bool resolvePatterns = true)
+  pure @safe
   in (e !is null)
   out (v; v !is null)
 {
@@ -156,7 +171,26 @@ static Value* eval(const Expr* e, const Env env) pure @safe
         default: assert(false);
       }
     },
-    (Variable var) => env.find(var.name, e.line, e.col, e.path),
+    (Variable var) {
+      auto v1 = env.find(var.name, e.line, e.col, e.path);
+      return (*v1).match!(
+        (Pattern p) {
+          if (!resolvePatterns)
+            return new Value(p);
+
+          if (p.paramCount != 0) {
+            throw new TokenException(
+              "Pattern called with 0 arguments instead of expected " ~ 
+              to!string(p.paramCount),
+              e.line, e.col, e.path
+            );
+          }
+
+          return p.call([]);
+        },
+        _ => v1
+      );
+    },
     (Finite s) {
       auto vs = s.members.map!(e1 => eval(e1, env));
 
@@ -187,6 +221,25 @@ static Value* eval(const Expr* e, const Env env) pure @safe
       auto dom = (*v1).get!Set;
       return new Value(new Set(dom, s.var, Formula(s.formula, env)));
     },
+    (Call c) => (*eval(c.callee, env, resolvePatterns : false)).match!(
+      (Pattern p) {
+        if (!p.fitsParams(c.args)) {
+          throw new TokenException(
+            "Pattern called with " ~ to!string(c.args.length) ~ 
+            (c.args.length == 1 ? " argument" : " arguments") ~
+            " instead of expected " ~ to!string(p.paramCount),
+            e.line, e.col, e.path
+          );
+        }
+        return 
+          resolvePatterns ? p.call(c.args.map!(a => eval(a, env)).array) 
+                          : new Value(p);
+      },
+      _ => throw new TokenException(
+        "Only patterns can be called with arguments",
+        e.line, e.col, e.path
+      )
+    ),
     (Set s) => new Value(s)
   );
 }

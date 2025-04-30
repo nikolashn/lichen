@@ -6,17 +6,17 @@ import std.sumtype;
 import syntax;
 import env;
 import set;
-import interpreter;
+import interpreter : eval;
 
 const struct Formula {
   Expr* expr;
   size_t freshCount;
   private Env env;
 
-  this(const Expr* e, const Env s, const size_t n = 0) 
+  this(const Expr* e, const Env r, const size_t n = 0) 
     pure nothrow @safe const
   {
-    expr = e; env = s; freshCount = n;
+    expr = e; env = r; freshCount = n;
   }
 
   bool toBool() pure @safe const {
@@ -37,7 +37,7 @@ const struct Formula {
     pure nothrow @safe const
   {
     auto expr1 = expr.rename(oldVar, newVar);
-    /+ If env has a delete method, use env.delete(oldVar) instead +/
+    /+ TODO: If env has a delete method, use env.delete(oldVar) instead +/
     return Formula(expr1, env);
   }
 

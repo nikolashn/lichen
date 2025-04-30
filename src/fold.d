@@ -1,4 +1,4 @@
-module foldconst;
+module fold;
 
 /+ Const-friendly folds +/
 
@@ -16,5 +16,11 @@ template foldl1(alias fun) {
   auto foldl1(T)(T[] xs) {
     return foldl!(fun)(xs[0], xs[1..$]);
   }
+}
+
+static string strJoin(const string[] ss, const string joiner) 
+  pure nothrow @safe
+{
+  return ss.foldl1!((str, s) => str ~ joiner ~ s);
 }
 

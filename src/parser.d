@@ -10,16 +10,19 @@ import syntax;
 /+ Syntax:
 
    program -> { expr ";" | def }
-   def -> identifier ":=" expr ";"
+   def -> identifier ":=" expr ";" 
+        | "pattern" identifier ("(" (identifier { "," identifier })? ")")? 
+          ":=" expr ";"
    expr -> pseudatom ("&" expr | "|" expr)? 
+   exprlist -> expr { "," expr }
    pseudatom -> atom | "~" pseudatom | "(" expr ")"
               | ("all" | "exist") identifier "(" set ")" expr
    atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
-   set -> term ("U" set)?
+   set -> term ("U" set | "(" exprlist? ")")?
    term -> "0" | identifier | "U" term | "P" term 
-         | "{" (term { "," term })? "}" 
-         | "{" identifier "<" set ":" expr "}"
+         | "{" termlist? "}" | "{" identifier "<" set ":" expr "}"
          | "(" set ")"
+   termlist -> term { "," term }
  +/
 
 class EOFException : Exception {
@@ -153,20 +156,53 @@ static Stmt[] parse(immutable(Token)[] tokens) pure @safe {
 
 private static Def* pDef(Parser p) pure @safe {
   p.track;
-  auto expr = pExpr(p);
+  auto x = p.consumeIdentifier;
 
-  if (expr !is null) {
-    string x = expr.val.match!(
-      (Variable var) => var.name,
-      _ => null
-    );
+  if (x !is null && p.consume(Token(Token.Special.DEFINE))) {
+    auto expr1 = pExpr(p);
 
-    if (x !is null && p.consume(Token(Token.Special.DEFINE))) {
-      auto expr1 = pExpr(p);
+    if (expr1 !is null && p.consume(Token(';'))) {
+      p.untrack;
+      return new Def(DefineVar(x, expr1));
+    }
+  }
 
-      if (expr1 !is null && p.consume(Token(';'))) {
-        p.untrack;
-        return new Def(DefineVar(x, expr1));
+  p.backtrack;
+
+  p.track;
+  
+  if (p.consume(Token(Token.Special.PATTERN))) {
+    auto name = p.consumeIdentifier;
+    if (name !is null) {
+      string[] params;
+      bool failed;
+
+      if (p.consume(Token('('))) {
+        auto param = p.consumeIdentifier;
+        if (param !is null) {
+          params = [ param ];
+          while (!failed && p.consume(Token(','))) {
+            param = p.consumeIdentifier;
+            if (param is null) {
+              failed = true;
+              break;
+            }
+            params ~= param;
+          }
+        }
+        failed = failed || !p.consume(Token(')'));
+      }
+
+      if (!failed && p.consume(Token(Token.Special.DEFINE))) {
+        auto expr = pExpr(p);
+        if (expr !is null && p.consume(Token(';'))) {
+          p.untrack;
+          return new Def(DefinePattern(
+            name,
+            params is null ? [] : params,
+            expr
+          ));
+        }
       }
     }
   }
@@ -211,6 +247,28 @@ private static Expr* pExpr(Parser p) pure @safe {
 
   p.backtrack;
 
+  return null;
+}
+
+private static pExprList(Parser p) pure @safe {
+  p.track;
+
+  auto expr = pExpr(p);
+  if (expr !is null) {
+    Expr*[] exprs = [ expr ];
+
+    while (exprs !is null && p.consume(Token(','))) {
+      expr = pExpr(p);
+      exprs = expr is null ? null : exprs ~ expr;
+    }
+
+    if (exprs !is null) {
+      p.untrack;
+      return exprs;
+    }
+  }
+
+  p.backtrack;
   return null;
 }
 
@@ -375,6 +433,13 @@ private static Expr* pSet(Parser p) pure @safe {
         return result;
       }
     }
+    else if (p.consume(Token('('))) {
+      auto exprs = pExprList(p);
+      if (p.consume(Token(')'))) {
+        p.untrack;
+        return new Expr(Call(term, exprs));
+      }
+    }
     else {
       p.untrack;
       return term;
@@ -433,22 +498,13 @@ private static Expr* pTerm(Parser p) pure @safe {
 
   p.track;
   if (p.consume(Token('{'))) {
-    auto term = pTerm(p);
-    if (term !is null) {
-      Expr*[] terms = [ term ];
-      while (p.consume(Token(','))) {
-        term = pTerm(p);
-        if (term is null)
-          break;
-        terms ~= term;
-      }
-      if (term !is null && p.consume(Token('}'))) {
-        auto result = new Expr(Finite(terms));
-        result.line = line; result.col = col; result.path = path;
+    auto terms = pTermList(p);
+    if (terms !is null && p.consume(Token('}'))) {
+      auto result = new Expr(Finite(terms));
+      result.line = line; result.col = col; result.path = path;
 
-        p.untrack;
-        return result;
-      }
+      p.untrack;
+      return result;
     }
     else if (p.consume(Token('}'))) {
       auto result = new Expr(Zero());
@@ -492,6 +548,28 @@ private static Expr* pTerm(Parser p) pure @safe {
 
   p.backtrack;
 
+  return null;
+}
+
+private static pTermList(Parser p) pure @safe {
+  p.track;
+
+  auto term = pTerm(p);
+  if (term !is null) {
+    Expr*[] terms = [ term ];
+
+    while (terms !is null && p.consume(Token(','))) {
+      term = pTerm(p);
+      terms = term is null ? null : terms ~ term;
+    }
+
+    if (terms !is null) {
+      p.untrack;
+      return terms;
+    }
+  }
+
+  p.backtrack;
   return null;
 }
 
