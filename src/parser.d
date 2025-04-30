@@ -20,9 +20,8 @@ import syntax;
    atom -> set ("=" set | "<" set | "/=" set | "sub" set)?
    set -> term ("U" set | "(" exprlist? ")")?
    term -> "0" | identifier | "U" term | "P" term 
-         | "{" termlist? "}" | "{" identifier "<" set ":" expr "}"
+         | "{" exprlist? "}" | "{" identifier "<" set ":" expr "}"
          | "(" set ")"
-   termlist -> term { "," term }
  +/
 
 class EOFException : Exception {
@@ -498,9 +497,9 @@ private static Expr* pTerm(Parser p) pure @safe {
 
   p.track;
   if (p.consume(Token('{'))) {
-    auto terms = pTermList(p);
-    if (terms !is null && p.consume(Token('}'))) {
-      auto result = new Expr(Finite(terms));
+    auto exprs = pExprList(p);
+    if (exprs !is null && p.consume(Token('}'))) {
+      auto result = new Expr(Finite(exprs));
       result.line = line; result.col = col; result.path = path;
 
       p.untrack;
@@ -548,28 +547,6 @@ private static Expr* pTerm(Parser p) pure @safe {
 
   p.backtrack;
 
-  return null;
-}
-
-private static pTermList(Parser p) pure @safe {
-  p.track;
-
-  auto term = pTerm(p);
-  if (term !is null) {
-    Expr*[] terms = [ term ];
-
-    while (terms !is null && p.consume(Token(','))) {
-      term = pTerm(p);
-      terms = term is null ? null : terms ~ term;
-    }
-
-    if (terms !is null) {
-      p.untrack;
-      return terms;
-    }
-  }
-
-  p.backtrack;
   return null;
 }
 

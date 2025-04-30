@@ -1,0 +1,23 @@
+pattern s(x) := x U {x};
+
+1 := s(0);
+2 := s(1);
+3 := s(2);
+
+pattern pair(a, b) := {{a}, {a, b}};
+pair(1, 2) /= pair(2, 1);
+
+pattern product(X, Y) := 
+  {z < P(P(X U Y)) : exist x(X) exist y(Y) z = pair(x, y)};
+
+product(0, 0) = 0;
+
+myProduct := { pair(1, 2), pair(1, 3) };
+product({1}, {2, 3}) sub myProduct;
+
+/+
+/+ This one is currently extremely slow +/
+myProduct := { pair(1, 2), pair(1, 3), pair(2, 2), pair(2, 3) };
+product({1, 2}, {2, 3}) sub myProduct;
++/
+
