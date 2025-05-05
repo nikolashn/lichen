@@ -4,6 +4,8 @@ pattern s(x) := x U {x};
 2 := s(1);
 3 := s(2);
 
+/+ Cartesian product +/
+
 pattern pair(a, b) := {{a}, {a, b}};
 pair(1, 2) /= pair(2, 1);
 
@@ -20,4 +22,35 @@ product({1}, {2, 3}) sub myProduct;
 myProduct := { pair(1, 2), pair(1, 3), pair(2, 2), pair(2, 3) };
 product({1, 2}, {2, 3}) sub myProduct;
 +/
+
+/+ Relations +/
+
+pattern isRel(R, X, Y) := R sub product(X, Y);
+
+neq2 := {pair(0, 1), pair(1, 0)};
+constZero3 := {pair(0, 0), pair(1, 0), pair(2, 0)};
+
+isRel(0, 0, 2);
+isRel(0, 2, 2);
+~isRel(neq2, 1, 1);
+isRel(neq2, 2, 2);
+~isRel(constZero3, 2, 2);
+
+pattern dom(R) := { x < U U R : exist y(U U R) pair(x, y) < R };
+pattern ran(R) := { y < U U R : exist x(U U R) pair(x, y) < R };
+
+dom(0) = 0;
+ran(0) = 0;
+dom(neq2) = 2;
+ran(neq2) = 2;
+dom(constZero3) = 3;
+ran(constZero3) = 1;
+
+pattern isBinRel(R, X) := isRel(R, X, X);
+
+isBinRel(0, 0);
+isBinRel(0, 2);
+~isBinRel(neq2, 1);
+isBinRel(neq2, 2);
+~isBinRel(constZero3, 2);
 
