@@ -1,0 +1,3 @@
+pattern empty(a) := { x < a : all y(a) x /= y };
+all x(empty({ 0 })) x = x;
+
