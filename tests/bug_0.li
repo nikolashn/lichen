@@ -1,3 +1,2 @@
-pattern empty(a) := { x < a : all y(a) x /= y };
-all x(empty({ 0 })) x = x;
+all x({z < {0} : all y({0}) z /= y}) x = x;
 
